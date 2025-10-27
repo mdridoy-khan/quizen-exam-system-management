@@ -62,6 +62,11 @@ const Sidebar = ({ role, isSidebarOpen, toggleSidebar, handleLogout }) => {
         label: "Dashboard",
       },
       {
+        to: "/president/events",
+        icon: <FiEdit size={18} />,
+        label: "Events",
+      },
+      {
         to: "/president/profile",
         icon: <GoHome size={18} />,
         label: "Profile",

@@ -20,6 +20,12 @@ import WinnerAnnouncementDetails from "./pages/landing-pages/WinnerAnnouncementD
 import AiQuestionMaker from "./pages/presidentDashboard/AiQuestionMaker";
 import AnnouncementCreationForm from "./pages/presidentDashboard/AnnouncementCreationForm";
 import CreateMixQuestion from "./pages/presidentDashboard/CreateMixQuestion";
+import AllRoundList from "./pages/presidentDashboard/events/AllRoundList";
+import CreateEventCreationForm from "./pages/presidentDashboard/events/CreateEventCreationForm";
+import EventQuestionMaker from "./pages/presidentDashboard/events/EventQuestionMaker";
+import PresidentEvents from "./pages/presidentDashboard/events/PresidentEvents";
+import RoundCreateForm from "./pages/presidentDashboard/events/RoundCreateForm";
+import RoundDetails from "./pages/presidentDashboard/events/RoundDetails";
 import PresidentAnnouncementList from "./pages/presidentDashboard/PresidentAnnouncementList";
 import PresidentProfile from "./pages/presidentDashboard/PresidentProfile";
 import RoundCreationForm from "./pages/presidentDashboard/RoundCreationForm";
@@ -71,6 +77,7 @@ function App() {
             path="/president/dashboard"
             element={<PresidentAnnouncementList />}
           />
+          <Route path="/president/events" element={<PresidentEvents />} />
           {/* make mix quesiton path */}
           <Route
             path="/president/create-quiz/mix/:roundId/:annId"
@@ -82,6 +89,10 @@ function App() {
             element={<AiQuestionMaker />}
           />
           <Route
+            path="/president/create-quiz-event/ai/:roundId/:annId"
+            element={<EventQuestionMaker />}
+          />
+          <Route
             path="/president/create-quiz/shared/:roundId/:annId"
             element={<SharedQuestionsPresident />}
           />
@@ -90,13 +101,26 @@ function App() {
             element={<PresidentAnnouncementList />}
           />
           <Route path="/president/rounds/:id?" element={<RoundList />} />
+          <Route path="/president/all-rounds/:id?" element={<AllRoundList />} />
           <Route
             path="/president/announcement-creation-form/:id?"
             element={<AnnouncementCreationForm />}
           />
           <Route
+            path="/president/event-creation-form/:id?"
+            element={<CreateEventCreationForm />}
+          />
+          <Route
             path="/president/round-creation-form/:id"
             element={<RoundCreationForm />}
+          />
+          <Route
+            path="/president/round-create-form/:id"
+            element={<RoundCreateForm />}
+          />
+          <Route
+            path="/president/round-details/:id"
+            element={<RoundDetails />}
           />
           <Route
             path="/president/quiz-question-interface"
