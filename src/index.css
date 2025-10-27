@@ -1,0 +1,358 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-body;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading;
+  }
+}
+/* custom css start here */
+
+/* banner slider arrow and bullet customization here */
+.banner_slider .swiper-button-next,
+.banner_slider .swiper-button-prev {
+  color: #ffffff !important;
+  background-color: #222222;
+  border-radius: 9999px;
+  top: 50%;
+  width: 40px !important;
+  height: 40px !important;
+  transition: all 0.2s ease-in-out;
+  opacity: 0;
+  visibility: hidden;
+}
+.banner_slider {
+  transition: all 0.2s ease-in-out;
+}
+.banner_slider:hover .swiper-button-prev {
+  opacity: 1;
+  visibility: visible;
+}
+.banner_slider:hover .swiper-button-next {
+  opacity: 1;
+  visibility: visible;
+}
+.banner_slider .swiper-button-next:hover,
+.banner_slider .swiper-button-prev:hover {
+  background-color: #6366f1;
+  color: #ffffff;
+}
+
+.banner_slider .swiper-button-next::after,
+.banner_slider .swiper-button-prev::after {
+  font-size: 16px !important;
+  font-weight: bold;
+}
+
+.testimonial-slider .swiper-pagination-bullet,
+.banner_slider .swiper-pagination-bullet {
+  background: #cbd5e1;
+  opacity: 1;
+  width: 30px;
+  height: 3px;
+  margin: 0 6px;
+  transition: all 0.3s ease;
+  border-radius: 2px !important;
+}
+.testimonial-slider .swiper-pagination-bullet {
+  height: 4px;
+}
+
+.testimonial-slider .swiper-pagination-bullet-active,
+.banner_slider .swiper-pagination-bullet-active {
+  background: #ff2474;
+  transform: scale(1.3);
+}
+.testimonial-slider .swiper-pagination-bullet-active {
+  background: #261e69;
+  transform: scale(1.3);
+}
+.event_slider .swiper-wrapper {
+  padding-bottom: 40px !important;
+}
+
+/* typed animation */
+.typed-cursor {
+  display: none !important;
+}
+.hero-banner-title {
+  line-height: 1.5 !important;
+  padding-right: 50px;
+}
+
+/* header social submenu custom style */
+.header_submenu .submenu {
+  opacity: 0;
+  visibility: hidden;
+  top: 50px;
+  transition: all 0.3s ease;
+}
+.header_submenu:hover .submenu {
+  opacity: 1;
+  visibility: visible;
+  top: 185%;
+}
+/* .sticky {
+  background-color: #ffffff;
+} */
+/* AuthButtons styling */
+.auth_single_btn {
+  position: relative;
+  right: -136px;
+  transition: all 0.3s ease;
+}
+.auth_single_btn:hover {
+  right: 0;
+}
+
+/* what's app contact animation here */
+@keyframes custom-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  80% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.custom-ping {
+  animation: custom-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+/* auth login form styling */
+.otp-form {
+  position: relative;
+}
+.otp-form:before {
+  background: #e5e5e5;
+  border: 1px solid #b9babe;
+  border-radius: 100%;
+  color: #000;
+  content: "or";
+  display: table-cell;
+  font-size: 14px;
+  height: 34px;
+  left: 45%;
+  line-height: 16px;
+  padding: 7px;
+  position: absolute;
+  text-align: center;
+  bottom: -16px;
+  width: 34px;
+}
+.login-text::before {
+  position: absolute;
+  content: "";
+  width: 16px;
+  height: 1px;
+  background: var(--black600-400);
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.login-text::after {
+  position: absolute;
+  content: "";
+  width: 16px;
+  height: 1px;
+  background: var(--black600-400);
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* dashboard sider styling */
+.sider {
+  flex: 0 0 220px;
+}
+.dashboard_content {
+  flex: 1;
+}
+
+/* react datepicker customization */
+.datepicker .react-datepicker-wrapper {
+  width: 100%;
+}
+
+/* tutor profile page styling */
+/* .tutor_profile_card {
+  flex: 0 0 320px;
+}
+.tutor_content {
+  flex: 1;
+} */
+
+/* custom input form */
+.form {
+  margin: 0 auto;
+  margin-top: 150px;
+  font-family: sans-serif;
+  background: #fff;
+}
+.form-item {
+  position: relative;
+  margin-bottom: 15px;
+}
+.form-item input {
+  display: block;
+  height: 45px;
+  background: transparent;
+  border-bottom: 1px solid #ccc;
+  transition: all 0.3s ease;
+}
+.form-item input:focus {
+  border-color: #ff2474;
+}
+.form-item label {
+  position: absolute;
+  cursor: text;
+  z-index: 2;
+  top: 12px;
+  left: 0;
+  font-size: 14px;
+  background: #fff;
+  color: #999;
+  transition: all 0.3s ease;
+}
+.form-item input:focus + label,
+.form-item input:valid + label {
+  font-size: 11px;
+  top: -10px;
+}
+.form-item input:focus + label {
+  color: #999999;
+}
+
+/* custom css end here */
+.feedback_slider {
+  overflow: hidden;
+}
+.feedback_slider .swiper-wrapper {
+  transition-timing-function: linear !important;
+}
+
+/* participate guide section style here */
+.animate-float {
+  animation: float 20s ease-in-out infinite;
+}
+.animate-float-reverse {
+  animation: float 15s ease-in-out infinite reverse;
+}
+.animate-float-slow {
+  animation: float 25s ease-in-out infinite;
+}
+.animate-rotate {
+  animation: rotate 30s linear infinite;
+}
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-1.875rem) rotate(180deg);
+  }
+}
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.before-scale-x-0::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 5px;
+  width: 100%;
+  height: 0.375rem;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+.participate_steps_card:active.before-scale-x-0::before {
+  width: 0;
+  height: 0;
+}
+.hover\:before-scale-x-1:hover::before {
+  transform: scaleX(1);
+}
+.before-radial-gradient::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(102, 126, 234, 0.1) 0%,
+    transparent 70%
+  );
+}
+
+/* date time custom css */
+.date_time .react-datepicker__input-time-container {
+  font-size: 16px;
+}
+
+/* home page hero slider custom css */
+.hero-slider {
+  position: relative;
+}
+.hero-slider::before {
+  position: absolute;
+  content: "";
+  width: 100%;
+  height: 100%;
+  background-color: #000000;
+  opacity: 0.6;
+  inset: 0;
+  z-index: 10;
+}
+
+/* Hide scrollbar */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.tel_wrapper .react-tel-input .form-control {
+  border-bottom: 1px solid #d1d5db !important;
+  border-top: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-radius: 0 !important;
+}
+.tel_wrapper .react-tel-input .flag-dropdown {
+  bottom: 4px !important;
+  background-color: #f6f4e3 !important;
+  border: 0 !important;
+}
