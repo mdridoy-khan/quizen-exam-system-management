@@ -1,12 +1,7 @@
 import { useRef } from "react";
-import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 import HeaderTop from "../../components/HeaderTop";
 import Hero from "../../components/hero/Hero";
-import AnnouncementSection from "./AnnouncementSection";
-import Faq from "./Faq";
-import Feedback from "./Feedback";
-import ParticipateGuide from "./ParticipateGuide";
 
 const Home = () => {
   const announcementRef = useRef(null);
@@ -25,13 +20,13 @@ const Home = () => {
         <HeaderTop onAnnouncementClick={handleScrollToAnnouncement} />
         <Header />
         <Hero onParticipateClick={handleScrollToAnnouncement} />
-        <AnnouncementSection ref={announcementRef} />
-        <ParticipateGuide />
-        <Faq />
-        <Feedback />
+        {/* <AnnouncementSection ref={announcementRef} /> */}
+        {/* <ParticipateGuide /> */}
+        {/* <Faq /> */}
+        {/* <Feedback /> */}
         {/* <AuthButtons onParticipateClick={handleScrollToAnnouncement} /> */}
         {/* <WhatsAppContact /> */}
-        <Footer />
+        {/* <Footer /> */}
       </div>
     </>
   );

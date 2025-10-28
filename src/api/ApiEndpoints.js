@@ -18,4 +18,5 @@ export const API_ENDPOINS = {
   OWN_DATA: "/anc/single-announcement-details/",
   INACTIVE_ANNOUNCEMENT_LIST: "/anc/in-active-announcement-list-lp",
   CLOSED_QUIZ: "/anc/closed-anc-list-lp/",
+  CLASS_DEPARTMENT: "/auth/class-department/",
 };

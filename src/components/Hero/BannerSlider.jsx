@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import CountUp from "react-countup";
+import { Link } from "react-router-dom";
 import "swiper/css";
 import "swiper/css/effect-fade";
 import "swiper/css/navigation";
@@ -11,7 +13,9 @@ import N from "../../assets/hero/N.svg";
 import Q from "../../assets/hero/Q.svg";
 import U from "../../assets/hero/U.svg";
 import Z from "../../assets/hero/Z.svg";
-import ImageSlider from "../ImageSlider";
+import Dollar from "../../assets/icons/dollar.svg";
+import Trophy from "../../assets/icons/trophy.svg";
+import UserPlus from "../../assets/icons/user-plus.svg";
 
 const BannerSlider = ({ onScroll }) => {
   const [totalA, setTotalA] = useState(null);
@@ -54,6 +58,24 @@ const BannerSlider = ({ onScroll }) => {
     getSlider();
   }, []);
 
+  // hero data fetch
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await API.get("/qzz/hero-section");
+        console.log("Fetch data:", response.data);
+        setTotalA(response.data);
+      } catch (err) {
+        console.error("API fetch error:", err);
+        setError("Data Not Found");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   // array of letter images
   const letters = [Q, U, I, Z, E, N];
 
@@ -61,13 +83,13 @@ const BannerSlider = ({ onScroll }) => {
     <div className="w-full text-white py-10 md:pt-20 lg:pt-16 2xl:pt-40 pb-4">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full">
         {/* Left Side */}
-        <div className="space-y-3 text-center">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-black drop-shadow-lg text-center">
+        <div className="space-y-8 text-center">
+          {/* <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-black drop-shadow-lg text-center">
             Convert your Talent into Money with
-          </h1>
+          </h1> */}
 
           {/* QUIZEN Animation with SVG images */}
-          <motion.div
+          <motion.h1
             className="flex justify-center items-center"
             initial="hidden"
             animate="visible"
@@ -104,7 +126,82 @@ const BannerSlider = ({ onScroll }) => {
                 }}
               />
             ))}
-          </motion.div>
+          </motion.h1>
+
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-black drop-shadow-lg text-center">
+            দেশের সবচেয়ে বড় কুইজ প্ল্যাটফর্ম
+          </h2>
+
+          {/* Stats Boxes */}
+          <div className="w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {loading ? (
+                <p className="col-span-3 text-center text-gray-400">
+                  Loading...
+                </p>
+              ) : error ? (
+                <p className="col-span-3 text-center text-red-400">{error}</p>
+              ) : (
+                <>
+                  {/* Participants */}
+                  <div className="bg-secondary shadow-sm rounded-2xl p-6 flex items-center space-x-4">
+                    <div className="flex items-center justify-center w-14 h-14 bg-[#ECF1FC] rounded-xl">
+                      <img src={UserPlus} alt="User Icon" className="max-w-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-white">
+                        <CountUp
+                          end={totalA?.total_participants || 0}
+                          duration={5}
+                        />
+                        +
+                      </h3>
+                      <p className="text-gray-100 text-sm">স্কলারশিপ</p>
+                    </div>
+                  </div>
+
+                  {/* Winners */}
+                  <div className="bg-secondary shadow-sm rounded-2xl p-6 flex items-center space-x-4">
+                    <div className="flex items-center justify-center w-14 h-14 bg-[#ECF1FC] rounded-xl">
+                      <img
+                        src={Trophy}
+                        alt="Trophy image"
+                        className="max-w-6"
+                      />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-white">
+                        <CountUp end={totalA?.total_winner || 0} duration={5} />
+                        +
+                      </h3>
+                      <p className="text-gray-100 text-sm">মোট বিজয়ী</p>
+                    </div>
+                  </div>
+
+                  {/* Lacs Prize Money */}
+                  <div className="bg-secondary shadow-sm rounded-2xl p-6 flex items-center space-x-4">
+                    <div className="flex items-center justify-center w-14 h-14 bg-[#ECF1FC] rounded-xl">
+                      <img
+                        src={Dollar}
+                        alt="dollar image"
+                        className="max-w-6"
+                      />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-white">
+                        <CountUp
+                          end={totalA?.total_quizzes || 0}
+                          duration={5}
+                        />
+                        + Lakh
+                      </h3>
+                      <p className="text-gray-100 text-sm">ক্যাশ প্রাইজ</p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
 
           {/* Stats Boxes */}
           {/* Uncomment and use if needed */}
@@ -140,24 +237,25 @@ const BannerSlider = ({ onScroll }) => {
           */}
         </div>
         {/* Button */}
+
         <div className="flex items-center justify-center mt-14">
-          <button
-            onClick={onScroll}
+          <Link
+            to="/register"
             className="bg-gradient-to-r from-gradientStart to-gradientEnd text-white text-sm font-medium px-5 sm:px-6 py-2 sm:py-2 rounded-md transition duration-300 shadow-lg"
           >
-            View All Announcement
-          </button>
+            রেজিস্ট্রেশন করুন
+          </Link>
         </div>
 
         {/* Right Side Slider */}
       </div>
-      <div className="relative w-full rounded-xl overflow-hidden banner_slider event_slider mt-8 md:mt-10 lg:mt-12 xl:mt-14 2xl:mt-16">
+      {/* <div className="relative w-full rounded-xl overflow-hidden banner_slider event_slider mt-8 md:mt-10 lg:mt-12 xl:mt-14 2xl:mt-16">
         {loading ? (
           <p className="text-center text-gray-400">Loading...</p>
         ) : (
           <ImageSlider images={sliderImages} />
         )}
-      </div>
+      </div> */}
     </div>
   );
 };

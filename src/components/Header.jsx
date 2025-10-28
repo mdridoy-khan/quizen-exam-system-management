@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { FiMenu, FiX } from "react-icons/fi";
 import { IoNotifications } from "react-icons/io5";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import API from "../api/API";
 import facebook from "../assets/icons/facebook.svg";
 import linkedin from "../assets/icons/linkedin.svg";
 import messanger from "../assets/icons/messanger.svg";
 import whatsapp from "../assets/icons/whatsapp.svg";
-import Logo from "../assets/logo/logo-blue.svg";
+import Logo from "../assets/logo/logo-blue.png";
 import { formatDateTime } from "../utils/FormateDateTime";
 import { UserLogout } from "../utils/UserLogout";
 
@@ -137,7 +137,7 @@ const Header = () => {
           </div>
 
           <ul className="flex items-center justify-between flex-wrap gap-2">
-            <li>
+            {/* <li>
               <NavLink
                 to="/"
                 className="group relative py-5 px-3 lg:px-5 inline-flex font-medium transition-all duration-300 rounded-lg overflow-hidden"
@@ -219,7 +219,7 @@ const Header = () => {
                   </>
                 )}
               </NavLink>
-            </li>
+            </li> */}
           </ul>
 
           {/* Desktop Search Box */}
@@ -409,14 +409,14 @@ const Header = () => {
                   className="px-5 py-2 text-center font-medium rounded-lg bg-indigo-100 bg-gradient-to-r from-gradientStart to-gradientEnd text-white"
                   onClick={() => setSidebarOpen(false)}
                 >
-                  Sign In
+                  লগইন
                 </Link>
                 <Link
                   to="/register"
                   className="px-5 py-2 text-center font-medium rounded-lg transition bg-indigo-100 text-gradientStart hover:bg-gradient-to-r hover:from-gradientStart hover:to-gradientEnd hover:text-white"
                   onClick={() => setSidebarOpen(false)}
                 >
-                  Sign Up
+                  রেজিস্টার
                 </Link>
               </div>
             )}
@@ -448,7 +448,7 @@ const Header = () => {
 
         {/* Sidebar Menu Items */}
         <ul className="flex flex-col p-4 gap-2 lg:gap-3">
-          <li>
+          {/* <li>
             <Link
               to="/"
               className={`block px-4 py-2 rounded-lg font-medium text-sm lg:text-base transition-all duration-300 ${
@@ -486,7 +486,7 @@ const Header = () => {
             >
               Closed Quiz
             </Link>
-          </li>
+          </li> */}
 
           {/* Social Media Icons */}
           <li className="mt-4 border-t border-gray-200 pt-4">
@@ -605,14 +605,14 @@ const Header = () => {
                 className="block px-4 py-2 text-center text-white font-medium text-sm lg:text-base bg-gradient-to-r from-gradientStart to-gradientEnd rounded-lg hover:shadow-lg transition"
                 onClick={() => setSidebarOpen(false)}
               >
-                Sign In
+                লগইন
               </Link>
               <Link
                 to="/register"
                 className="block px-4 py-2 text-center text-white font-medium text-sm lg:text-base bg-gradient-to-r from-gradientStart to-gradientEnd rounded-lg hover:shadow-lg transition"
                 onClick={() => setSidebarOpen(false)}
               >
-                Sign Up
+                রেজিস্টার
               </Link>
             </li>
           )}

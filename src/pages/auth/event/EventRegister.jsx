@@ -10,60 +10,46 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import * as Yup from "yup";
-import API from "../../api/API";
-import { API_ENDPOINS } from "../../api/ApiEndpoints";
-import FormImage from "../../assets/auth/authBg.jpg";
-import { PATH } from "../../routes/PATH";
-
-// Capitalize utility
-const capitalize = (str) =>
-  str
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
-
-const Registration = () => {
+import API from "../../../api/API";
+import { API_ENDPOINS } from "../../../api/ApiEndpoints";
+import FormImage from "../../../assets/auth/authBg.jpg";
+import { PATH } from "../../../routes/PATH";
+const EventRegister = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // States
   const [userType, setUserType] = useState("student");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [apiError, setApiError] = useState("");
-  const [apiSuccess, setApiSuccess] = useState("");
-
-  // City (Upazila)
   const [cities, setCities] = useState([]);
   const [filteredCities, setFilteredCities] = useState([]);
-  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [cityInput, setCityInput] = useState("");
-
-  // Categories
+  const [apiError, setApiError] = useState("");
+  const [apiSuccess, setApiSuccess] = useState("");
   const [categories, setCategories] = useState([]);
   const [categoryLoading, setCategoryLoading] = useState(false);
   const [categoryError, setCategoryError] = useState(null);
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const location = useLocation();
   const [categoryInput, setCategoryInput] = useState("");
   const [filteredCategories, setFilteredCategories] = useState([]);
   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
 
-  // Class/Department
-  const [classDepartments, setClassDepartments] = useState([]);
-  const [filteredDepartments, setFilteredDepartments] = useState([]);
-  const [showDeptSuggestions, setShowDeptSuggestions] = useState(false);
-  const [deptInput, setDeptInput] = useState("");
-  const [deptLoading, setDeptLoading] = useState(false);
-
-  // Set userType from navigation state
+  // user base form tab open
   useEffect(() => {
     if (location.state?.userType) {
       setUserType(location.state.userType);
     }
-  }, [location.state?.userType]);
+  }, [location.state]);
 
-  // Fetch Upazila
+  // Capitalize function for category names
+  const capitalize = (str) =>
+    str
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+
+  // Fetch upazila name list
   useEffect(() => {
     API.get(API_ENDPOINS.UPAZILA_NAME)
       .then((res) => {
@@ -73,65 +59,57 @@ const Registration = () => {
       })
       .catch((err) => {
         console.error("Error fetching cities:", err);
-        setApiError("Failed to load cities.");
+        setApiError("Failed to load cities. Please try again.");
       });
   }, []);
 
-  // Fetch Categories
+  // Fetch category list
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         setCategoryLoading(true);
         setCategoryError(null);
+
         const res = await API.get("/auth/category/");
         if (res.status === 200 && Array.isArray(res.data)) {
           setCategories(res.data);
         } else {
-          throw new Error("Invalid response");
+          throw new Error("Invalid response format from server");
         }
       } catch (err) {
         console.error("Error fetching categories:", err);
-        setCategoryError(
-          err.response?.data?.message ||
-            "Failed to load categories. Please try again."
-        );
+        if (err.response) {
+          setCategoryError(
+            err.response.data?.message ||
+              `Server error: ${err.response.status} ${err.response.statusText}`
+          );
+        } else if (err.request) {
+          setCategoryError(
+            "Network error: Failed to reach the server. Please try again."
+          );
+        } else {
+          setCategoryError(
+            "An unexpected error occurred. Please try again later."
+          );
+        }
       } finally {
         setCategoryLoading(false);
       }
     };
+
     fetchCategories();
   }, []);
 
-  // Fetch Class/Departments
-  useEffect(() => {
-    const fetchDepartments = async () => {
-      try {
-        setDeptLoading(true);
-        const res = await API.get(API_ENDPOINS.CLASS_DEPARTMENT);
-        if (res.data && Array.isArray(res.data)) {
-          setClassDepartments(res.data);
-        }
-      } catch (err) {
-        console.error("Error fetching departments:", err);
-        setApiError("Failed to load departments.");
-      } finally {
-        setDeptLoading(false);
-      }
-    };
-    fetchDepartments();
-  }, []);
-
-  // Handle category selection
-  const handleCategorySelect = (cat) => {
-    if (!selectedCategories.includes(cat.category_name)) {
-      setSelectedCategories((prev) => [...prev, cat.category_name]);
-    }
-    setCategoryInput("");
-    setFilteredCategories([]);
-    setShowCategorySuggestions(false);
+  // Handle checkbox change
+  const handleCategoryChange = (category) => {
+    setSelectedCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category]
+    );
   };
 
-  // Validation Schema
+  // Registration form validation schema
   const validationSchema = Yup.object({
     fullName: Yup.string()
       .min(3, "Full Name must be at least 3 characters")
@@ -146,15 +124,19 @@ const Registration = () => {
       .email("Invalid email format")
       .required("Email is required"),
     instutionName: Yup.string().required("Institution Name is required"),
-    class_department_id: Yup.string().required(
-      "Please select a class/department"
-    ),
+    departmentName: Yup.string().required("Department Name is required"),
     experience: Yup.string().when([], {
       is: () => userType === "tutor",
       then: (schema) => schema.required("Experience is required for tutors"),
       otherwise: (schema) => schema.notRequired(),
     }),
-    upazila_id: Yup.string().required("Please select a city"),
+    upazila_id: Yup.string()
+      .required("Please select a city")
+      .test(
+        "is-valid",
+        "Invalid city selection",
+        (value) => !!value && value.trim() !== ""
+      ),
     address: Yup.string().required("Address is required"),
     password: Yup.string()
       .matches(/[A-Z]/, "Must contain at least one uppercase letter")
@@ -168,14 +150,56 @@ const Registration = () => {
       .required("Confirm password is required"),
   });
 
-  // Formik
+  // Handle form submission
+  const handleSubmitRegistration = (values) => {
+    setLoading(true);
+    setApiError("");
+    setApiSuccess("");
+
+    const payload = {
+      user_type: userType,
+      ...(userType === "tutor" && { experience: values.experience }),
+      full_name: values.fullName,
+      phone: values.phoneNumber,
+      gmail: values.email,
+      department: values.departmentName,
+      institution: values.instutionName,
+      address: values.address,
+      upazila_id: values.upazila_id || "637",
+      password: values.password,
+      confirm_password: values.confirmPassword,
+      category_choice: selectedCategories.map(capitalize),
+    };
+
+    // Sign up API handle
+    API.post(API_ENDPOINS.SIGN_UP, payload)
+      .then((res) => {
+        const successMessage = res.data.success;
+        if (successMessage) {
+          setApiSuccess(successMessage);
+        }
+        navigate(PATH.otpVerification, {
+          state: { email: values.email, from: "registration" },
+        });
+      })
+      .catch((err) => {
+        console.error(err);
+        const errorMessage = err.response?.data?.error || "Registration failed";
+        setApiError(errorMessage);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
+  // UseFormik with Yup validation
   const registrationFormik = useFormik({
     initialValues: {
       fullName: "",
       phoneNumber: "",
       email: "",
       instutionName: "",
-      class_department_id: "",
+      departmentName: "",
       experience: "",
       upazila_id: "",
       address: "",
@@ -183,43 +207,7 @@ const Registration = () => {
       confirmPassword: "",
     },
     validationSchema,
-    onSubmit: (values) => {
-      setLoading(true);
-      setApiError("");
-      setApiSuccess("");
-
-      const payload = {
-        user_type: userType,
-        ...(userType === "tutor" && { experience: values.experience }),
-        full_name: values.fullName,
-        phone: values.phoneNumber,
-        gmail: values.email,
-        institution: values.instutionName,
-        class_department_id: values.class_department_id,
-        address: values.address,
-        upazila_id: values.upazila_id,
-        password: values.password,
-        confirm_password: values.confirmPassword,
-        category_choice: selectedCategories.map(capitalize),
-      };
-
-      API.post(API_ENDPOINS.SIGN_UP, payload)
-        .then((res) => {
-          const successMessage = res.data.success || "Registration successful!";
-          setApiSuccess(successMessage);
-          navigate(PATH.otpVerification, {
-            state: { email: values.email, from: "registration" },
-          });
-        })
-        .catch((err) => {
-          const errorMessage =
-            err.response?.data?.error || "Registration failed";
-          setApiError(errorMessage);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    },
+    onSubmit: handleSubmitRegistration,
   });
 
   return (
@@ -230,482 +218,585 @@ const Registration = () => {
             <div className="hidden lg:block w-[45%]">
               <img
                 src={FormImage}
-                alt="Signup"
-                className="w-full h-full object-cover"
+                alt="Signup Illustration"
+                class="w-full h-full object-cover"
               />
             </div>
+            <div className="max-w-4xl mx-auto flex-1 gap-4 p-10">
+              <div>
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-semibold mb-0">
+                  Sign Up
+                </h3>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base lg:text-lg text-gray-700 font-medium relative">
+                    Register as a{" "}
+                    <span
+                      className={`px-1 rounded ${
+                        userType === "student"
+                          ? "text-primary py-0"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      Student
+                    </span>{" "}
+                    or{" "}
+                    <span
+                      className={`px-1 rounded ${
+                        userType === "tutor"
+                          ? "text-primary py-0"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      Tutor
+                    </span>
+                  </h3>
+                  <Link
+                    to="/"
+                    className="w-6 h-5 flex items-center justify-center"
+                  >
+                    <MdOutlineKeyboardBackspace
+                      size={24}
+                      className="w-full transition hover:text-primary"
+                    />
+                  </Link>
+                </div>
 
-            <div className="flex-1 p-6 sm:p-10">
-              <h3 className="text-xl sm:text-2xl lg:text-3xl font-semibold mb-4">
-                Sign Up
-              </h3>
-
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base lg:text-lg text-gray-700 font-medium">
-                  Register as a{" "}
-                  <span
-                    className={
-                      userType === "student" ? "text-primary" : "text-gray-700"
-                    }
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setUserType("student")}
+                    className={`${
+                      userType === "student"
+                        ? "bg-gradient-to-r from-primary to-secondary text-white"
+                        : "bg-[#F6F4E3] text-gray-700"
+                    } block w-full rounded-md p-2 transition`}
                   >
                     Student
-                  </span>{" "}
-                  or{" "}
-                  <span
-                    className={
-                      userType === "tutor" ? "text-primary" : "text-gray-700"
-                    }
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUserType("tutor")}
+                    className={`${
+                      userType === "tutor"
+                        ? "bg-gradient-to-r from-primary to-secondary text-white"
+                        : "bg-[#F6F4E3] text-gray-700"
+                    } block w-full rounded-md p-2 transition`}
                   >
                     Tutor
-                  </span>
-                </h3>
-                <Link
-                  to="/"
-                  className="w-6 h-5 flex items-center justify-center"
-                >
-                  <MdOutlineKeyboardBackspace
-                    size={24}
-                    className="transition hover:text-primary"
-                  />
-                </Link>
-              </div>
+                  </button>
+                </div>
 
-              <div className="flex gap-2 mb-4">
-                <button
-                  type="button"
-                  onClick={() => setUserType("student")}
-                  className={`flex-1 rounded-md p-2 transition ${
-                    userType === "student"
-                      ? "bg-gradient-to-r from-primary to-secondary text-white"
-                      : "bg-[#F6F4E3] text-gray-700"
-                  }`}
-                >
-                  Student
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUserType("tutor")}
-                  className={`flex-1 rounded-md p-2 transition ${
-                    userType === "tutor"
-                      ? "bg-gradient-to-r from-primary to-secondary text-white"
-                      : "bg-[#F6F4E3] text-gray-700"
-                  }`}
-                >
-                  Tutor
-                </button>
-              </div>
-
-              {(apiError || apiSuccess || categoryError) && (
-                <div className="flex items-center justify-center mb-4">
-                  <div
-                    className={`flex items-center justify-between rounded py-1 px-2 w-full ${
-                      apiError || categoryError ? "bg-pink-200" : "bg-green-100"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {(apiError || categoryError) && (
-                        <HiMiniExclamationCircle size={20} color="#681923" />
-                      )}
-                      <span>{apiError || apiSuccess || categoryError}</span>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setApiError("");
-                        setApiSuccess("");
-                        setCategoryError(null);
-                      }}
+                {(apiError || apiSuccess || categoryError) && (
+                  <div className="flex items-center justify-center mb-6">
+                    <div
+                      className={`flex items-center justify-between rounded py-1 px-2 ${
+                        apiError || categoryError ? "bg-pink200" : "bg-green100"
+                      }`}
                     >
-                      <IoCloseOutline size={20} />
-                    </button>
+                      <div className="flex items-center gap-2">
+                        {(apiError || categoryError) && (
+                          <HiMiniExclamationCircle size={20} color="#681923" />
+                        )}
+                        <span className="block">
+                          {apiError || apiSuccess || categoryError}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setApiError("");
+                          setApiSuccess("");
+                          setCategoryError(null);
+                        }}
+                      >
+                        <IoCloseOutline size={20} />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              <form
-                onSubmit={registrationFormik.handleSubmit}
-                className="space-y-4"
-              >
-                {/* Full Name */}
-                <div className="input-wrapper">
-                  <input
-                    type="text"
-                    name="fullName"
-                    placeholder="Enter Your Full Name *"
-                    className="w-full border-b border-gray-300 p-2 outline-none focus:border-primary"
-                    {...registrationFormik.getFieldProps("fullName")}
-                  />
-                  {registrationFormik.touched.fullName &&
-                    registrationFormik.errors.fullName && (
-                      <span className="text-sm text-primary">
-                        {registrationFormik.errors.fullName}
-                      </span>
-                    )}
-                </div>
+                <form
+                  onSubmit={registrationFormik.handleSubmit}
+                  className="space-y-2"
+                >
+                  <div className="input-wrapper">
+                    {/* <label
+                      htmlFor="fullName"
+                      className="text-sm font-medium text-gray-700 mb-1 block"
+                    >
+                      Full Name <span className="text-red-500">*</span>
+                    </label> */}
+                    <input
+                      type="text"
+                      id="fullName"
+                      name="fullName"
+                      onChange={registrationFormik.handleChange}
+                      value={registrationFormik.values.fullName}
+                      onBlur={registrationFormik.handleBlur}
+                      placeholder="Enter Your Full Name *"
+                      className="w-full border-b border-gray-300 p-2 outline-none shadow_team1 focus:border-primary"
+                      required
+                    />
+                    {registrationFormik.touched.fullName &&
+                      registrationFormik.errors.fullName && (
+                        <span className="text-sm text-primary">
+                          {registrationFormik.errors.fullName}
+                        </span>
+                      )}
+                  </div>
 
-                {/* Phone */}
-
-                <div className="input-wrapper">
-                  {/* <label
+                  <div className="input-wrapper">
+                    {/* <label
                       htmlFor="phoneNumber"
                       className="text-sm font-medium text-gray-700 mb-1 block"
                     >
                       Phone No <span className="text-red-500">*</span>
                     </label> */}
-                  <div className="flex gap-2 tel_wrapper">
-                    <PhoneInput
-                      country={"bd"}
-                      id="phoneNumber"
-                      name="phoneNumber"
-                      onChange={(phone) =>
-                        registrationFormik.setFieldValue(
-                          "phoneNumber",
-                          `+${phone}`
-                        )
-                      }
-                      value={registrationFormik.values.phoneNumber}
-                      onBlur={registrationFormik.handleBlur}
-                      placeholder="Enter Phone Number *"
-                      inputClass="!h-[42px] !w-full border-b border-gray-300 p-2 outline-none shadow_team1 focus:border-primary"
-                    />
-                  </div>
-                  {registrationFormik.touched.phoneNumber &&
-                    registrationFormik.errors.phoneNumber && (
-                      <span className="text-sm text-primary">
-                        {registrationFormik.errors.phoneNumber}
-                      </span>
-                    )}
-                </div>
-
-                {/* Email */}
-                <div className="input-wrapper">
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="Enter Email *"
-                    className="w-full border-b border-gray-300 p-2 outline-none focus:border-primary"
-                    {...registrationFormik.getFieldProps("email")}
-                  />
-                  {registrationFormik.touched.email &&
-                    registrationFormik.errors.email && (
-                      <span className="text-sm text-primary">
-                        {registrationFormik.errors.email}
-                      </span>
-                    )}
-                </div>
-
-                {/* Institution & Department */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Institution */}
-                  <div className="input-wrapper">
-                    <input
-                      type="text"
-                      name="instutionName"
-                      placeholder="Enter Institution Name *"
-                      className="w-full border-b border-gray-300 p-2 outline-none focus:border-primary"
-                      {...registrationFormik.getFieldProps("instutionName")}
-                    />
-                    {registrationFormik.touched.instutionName &&
-                      registrationFormik.errors.instutionName && (
+                    <div className="flex gap-2 tel_wrapper">
+                      <PhoneInput
+                        country={"bd"}
+                        id="phoneNumber"
+                        name="phoneNumber"
+                        onChange={(phone) =>
+                          registrationFormik.setFieldValue(
+                            "phoneNumber",
+                            `+${phone}`
+                          )
+                        }
+                        value={registrationFormik.values.phoneNumber}
+                        onBlur={registrationFormik.handleBlur}
+                        placeholder="Enter Phone Number *"
+                        inputClass="!h-[42px] !w-full border-b border-gray-300 p-2 outline-none shadow_team1 focus:border-primary"
+                      />
+                    </div>
+                    {registrationFormik.touched.phoneNumber &&
+                      registrationFormik.errors.phoneNumber && (
                         <span className="text-sm text-primary">
-                          {registrationFormik.errors.instutionName}
+                          {registrationFormik.errors.phoneNumber}
                         </span>
                       )}
                   </div>
 
-                  {/* Class/Department Autocomplete */}
+                  <div className="input-wrapper">
+                    {/* <label
+                      htmlFor="email"
+                      className="text-sm font-medium text-gray-700 mb-1 block"
+                    >
+                      Email <span className="text-red-500">*</span>
+                    </label> */}
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      onChange={registrationFormik.handleChange}
+                      value={registrationFormik.values.email}
+                      onBlur={registrationFormik.handleBlur}
+                      placeholder="Enter Email *"
+                      className="w-full border-b border-gray-300 p-2 outline-none shadow_team1 focus:border-primary"
+                    />
+                    {registrationFormik.touched.email &&
+                      registrationFormik.errors.email && (
+                        <span className="text-sm text-primary">
+                          {registrationFormik.errors.email}
+                        </span>
+                      )}
+                  </div>
+
+                  <div className="input-group grid grid-cols-2 gap-4">
+                    <div className="input-wrapper">
+                      {/* <label
+                        htmlFor="instutionName"
+                        className="text-sm font-medium text-gray-700 mb-1 block"
+                      >
+                        Institution Name <span className="text-red-500">*</span>
+                      </label> */}
+                      <input
+                        type="text"
+                        id="instutionName"
+                        name="instutionName"
+                        onChange={registrationFormik.handleChange}
+                        value={registrationFormik.values.instutionName}
+                        onBlur={registrationFormik.handleBlur}
+                        placeholder="Enter Institution Name *"
+                        className="w-full border-b border-gray-300 p-2 outline-none shadow_team1 focus:border-primary"
+                      />
+                      {registrationFormik.touched.instutionName &&
+                        registrationFormik.errors.instutionName && (
+                          <span className="text-sm text-primary">
+                            {registrationFormik.errors.instutionName}
+                          </span>
+                        )}
+                    </div>
+                    <div className="input-wrapper">
+                      {/* <label
+                        htmlFor="departmentName"
+                        className="text-sm font-medium text-gray-700 mb-1 block"
+                      >
+                        Department Name <span className="text-red-500">*</span>
+                      </label> */}
+                      <input
+                        type="text"
+                        id="departmentName"
+                        name="departmentName"
+                        onChange={registrationFormik.handleChange}
+                        value={registrationFormik.values.departmentName}
+                        onBlur={registrationFormik.handleBlur}
+                        placeholder="Enter Department Name *"
+                        className="w-full border-b border-gray-300 p-2 outline-none shadow_team1 focus:border-primary"
+                      />
+                      {registrationFormik.touched.departmentName &&
+                        registrationFormik.errors.departmentName && (
+                          <span className="text-sm text-primary">
+                            {registrationFormik.errors.departmentName}
+                          </span>
+                        )}
+                    </div>
+                  </div>
+
+                  <div className="input-group grid grid-cols-2 gap-4">
+                    <div className="input-wrapper relative">
+                      {/* <label
+                        htmlFor="upazila_id"
+                        className="text-sm font-medium text-gray-700 mb-1 block"
+                      >
+                        Choose City <span className="text-red-500">*</span>
+                      </label> */}
+                      <input
+                        type="text"
+                        id="upazila_id"
+                        name="upazila_id"
+                        value={cityInput}
+                        onChange={(e) => {
+                          const searchValue = e.target.value;
+                          setCityInput(searchValue);
+                          setFilteredCities(
+                            cities.filter((c) =>
+                              c.name
+                                .toLowerCase()
+                                .includes(searchValue.toLowerCase())
+                            )
+                          );
+                          setShowSuggestions(true);
+                        }}
+                        onFocus={() => setShowSuggestions(true)}
+                        onBlur={() =>
+                          setTimeout(() => setShowSuggestions(false), 100)
+                        }
+                        placeholder="Your Upazila *"
+                        className="w-full border-b border-gray-300 p-2 outline-none shadow_team1 focus:border-primary"
+                      />
+
+                      {showSuggestions && filteredCities.length > 0 && (
+                        <ul className="absolute bg-white border-b border-gray-300 rounded-md mt-1 w-full max-h-40 overflow-y-auto shadow z-10">
+                          {filteredCities.map((city) => (
+                            <li
+                              key={city.id}
+                              className="px-3 py-2 cursor-pointer hover:bg-gray-200"
+                              onClick={() => {
+                                registrationFormik.setFieldValue(
+                                  "upazila_id",
+                                  city.id
+                                );
+                                setCityInput(city.name);
+                                setShowSuggestions(false);
+                              }}
+                            >
+                              {city.name}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {registrationFormik.touched.upazila_id &&
+                        registrationFormik.errors.upazila_id && (
+                          <span className="text-sm text-primary">
+                            {registrationFormik.errors.upazila_id}
+                          </span>
+                        )}
+                    </div>
+
+                    <div className="input-wrapper">
+                      {/* <label
+                        htmlFor="address"
+                        className="text-sm font-medium text-gray-700 mb-1 block"
+                      >
+                        Address <span className="text-red-500">*</span>
+                      </label> */}
+                      <input
+                        type="text"
+                        id="address"
+                        name="address"
+                        onChange={registrationFormik.handleChange}
+                        value={registrationFormik.values.address}
+                        onBlur={registrationFormik.handleBlur}
+                        placeholder="Enter Address *"
+                        className="w-full border-b border-gray-300 p-2 outline-none shadow_team1 focus:border focus:primary"
+                      />
+                      {registrationFormik.touched.address &&
+                        registrationFormik.errors.address && (
+                          <span className="text-sm text-primary">
+                            {registrationFormik.errors.address}
+                          </span>
+                        )}
+                    </div>
+                  </div>
+
+                  {userType === "tutor" && (
+                    <div className="input-wrapper">
+                      {/* <label
+                        htmlFor="experience"
+                        className="text-sm font-medium text-gray-700 mb-1 block"
+                      >
+                        Experience <span className="text-red-500">*</span>
+                      </label> */}
+                      <textarea
+                        id="experience"
+                        name="experience"
+                        onChange={registrationFormik.handleChange}
+                        value={registrationFormik.values.experience}
+                        onBlur={registrationFormik.handleBlur}
+                        placeholder="Describe your teaching experience *"
+                        className="w-full border-b border-gray-300 p-2 outline-none shadow_team1 focus:border-primary"
+                        rows={4}
+                      />
+                      {registrationFormik.touched.experience &&
+                        registrationFormik.errors.experience && (
+                          <span className="text-sm text-primary">
+                            {registrationFormik.errors.experience}
+                          </span>
+                        )}
+                    </div>
+                  )}
+
                   <div className="input-wrapper relative">
-                    {deptLoading ? (
+                    {categoryLoading ? (
                       <div className="flex items-center text-gray-600 gap-2">
                         <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                        <span>Loading...</span>
+                        <span>Loading categories...</span>
                       </div>
                     ) : (
                       <>
+                        {/* Search Input for Category */}
                         <input
                           type="text"
-                          value={deptInput}
+                          placeholder="Search and select subject..."
+                          value={categoryInput}
                           onChange={(e) => {
-                            const val = e.target.value;
-                            setDeptInput(val);
-                            const filtered = classDepartments.filter((d) =>
-                              d.class_department
+                            const searchValue = e.target.value;
+                            setCategoryInput(searchValue);
+
+                            // Filter category list
+                            const filtered = categories.filter((cat) =>
+                              cat.category_name
                                 .toLowerCase()
-                                .includes(val.toLowerCase())
+                                .includes(searchValue.toLowerCase())
                             );
-                            setFilteredDepartments(filtered);
-                            setShowDeptSuggestions(true);
+                            setFilteredCategories(filtered);
+                            setShowCategorySuggestions(true);
                           }}
-                          onFocus={() => setShowDeptSuggestions(true)}
-                          placeholder="Enter Department/Class Name *"
-                          className="w-full border-b border-gray-300 p-2 outline-none focus:border-primary"
+                          onFocus={() => setShowCategorySuggestions(true)}
+                          onBlur={() =>
+                            setTimeout(
+                              () => setShowCategorySuggestions(false),
+                              100
+                            )
+                          }
+                          className="w-full border-b border-gray-300 p-2 outline-none shadow_team1 focus:border-primary"
                         />
 
-                        {showDeptSuggestions &&
-                          filteredDepartments.length > 0 && (
-                            <ul className="absolute bg-white border border-gray-300 rounded-md mt-1 w-full max-h-40 overflow-y-auto shadow z-20">
-                              {filteredDepartments.map((dept) => (
+                        {/* Dropdown List */}
+                        {showCategorySuggestions &&
+                          filteredCategories.length > 0 && (
+                            <ul className="absolute bg-white border border-gray-300 rounded-md mt-1 w-full max-h-40 overflow-y-auto shadow z-10">
+                              {filteredCategories.map((cat, index) => (
                                 <li
-                                  key={dept.id}
-                                  className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm"
-                                  onMouseDown={(e) => e.preventDefault()}
+                                  key={index}
+                                  className="px-3 py-2 cursor-pointer hover:bg-gray-200 text-sm flex items-center gap-2"
                                   onClick={() => {
-                                    registrationFormik.setFieldValue(
-                                      "class_department_id",
-                                      dept.id
-                                    );
-                                    setDeptInput(dept.class_department);
-                                    setShowDeptSuggestions(false);
+                                    if (
+                                      !selectedCategories.includes(
+                                        cat.category_name
+                                      )
+                                    ) {
+                                      setSelectedCategories((prev) => [
+                                        ...prev,
+                                        cat.category_name,
+                                      ]);
+                                    }
+                                    setCategoryInput(""); // clear search box
+                                    setFilteredCategories([]); // clear dropdown
+                                    setShowCategorySuggestions(false);
                                   }}
                                 >
-                                  {dept.class_department}
+                                  <TbCategoryPlus size={16} />
+                                  {cat.category_name}
                                 </li>
                               ))}
                             </ul>
                           )}
 
-                        {showDeptSuggestions &&
-                          filteredDepartments.length === 0 &&
-                          deptInput && (
-                            <div className="absolute bg-white border border-gray-300 rounded-md mt-1 w-full p-2 text-sm text-gray-500">
-                              No department found
-                            </div>
-                          )}
+                        {/* Selected Categories Display */}
+                        {selectedCategories.length > 0 && (
+                          <div className="mt-2 p-2 border border-gray-300 rounded-md min-h-[50px] bg-gray-50">
+                            {selectedCategories.map((cat, index) => (
+                              <span
+                                key={index}
+                                className="inline-block bg-[#F6F4E3] text-secondary px-2 py-1 rounded-md mr-2 mb-2 text-sm"
+                              >
+                                {capitalize(cat)}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setSelectedCategories((prev) =>
+                                      prev.filter((c) => c !== cat)
+                                    )
+                                  }
+                                  className="ml-2 text-primary hover:text-primary"
+                                >
+                                  &times;
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </>
                     )}
-                    {registrationFormik.touched.class_department_id &&
-                      registrationFormik.errors.class_department_id && (
-                        <span className="text-sm text-primary">
-                          {registrationFormik.errors.class_department_id}
-                        </span>
-                      )}
                   </div>
-                </div>
 
-                {/* Upazila & Address */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Upazila Autocomplete */}
                   <div className="input-wrapper relative">
+                    {/* <label
+                      htmlFor="password"
+                      className="text-sm font-medium text-gray-700 mb-1 block"
+                    >
+                      Enter Password <span className="text-red-500">*</span>
+                    </label> */}
                     <input
-                      type="text"
-                      value={cityInput}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setCityInput(val);
-                        const filtered = cities.filter((c) =>
-                          c.name.toLowerCase().includes(val.toLowerCase())
-                        );
-                        setFilteredCities(filtered);
-                        setShowCitySuggestions(true);
-                      }}
-                      onFocus={() => setShowCitySuggestions(true)}
-                      placeholder="Your Upazila *"
-                      className="w-full border-b border-gray-300 p-2 outline-none focus:border-primary"
+                      type={showPassword ? "text" : "password"}
+                      id="password"
+                      name="password"
+                      onChange={registrationFormik.handleChange}
+                      value={registrationFormik.values.password}
+                      onBlur={registrationFormik.handleBlur}
+                      placeholder="Enter Password *"
+                      className="w-full border-b border-gray-300 p-2 outline-none shadow_team1 focus:border-primary"
                     />
-
-                    {showCitySuggestions && filteredCities.length > 0 && (
-                      <ul className="absolute bg-white border border-gray-300 rounded-md mt-1 w-full max-h-40 overflow-y-auto shadow z-20">
-                        {filteredCities.map((city) => (
-                          <li
-                            key={city.id}
-                            className="px-3 py-2 cursor-pointer hover:bg-gray-100"
-                            onMouseDown={(e) => e.preventDefault()}
-                            onClick={() => {
-                              registrationFormik.setFieldValue(
-                                "upazila_id",
-                                city.id
-                              );
-                              setCityInput(city.name);
-                              setShowCitySuggestions(false);
-                            }}
-                          >
-                            {city.name}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    {registrationFormik.touched.upazila_id &&
-                      registrationFormik.errors.upazila_id && (
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-[15px] text-sm text-gray500"
+                    >
+                      {showPassword ? <FiEye /> : <FiEyeOff />}
+                    </button>
+                    {registrationFormik.touched.password &&
+                      registrationFormik.errors.password && (
                         <span className="text-sm text-primary">
-                          {registrationFormik.errors.upazila_id}
+                          {registrationFormik.errors.password}
                         </span>
                       )}
                   </div>
 
-                  {/* Address */}
-                  <div className="input-wrapper">
+                  <div className="input-wrapper relative">
+                    {/* <label
+                      htmlFor="confirmPassword"
+                      className="text-sm font-medium text-gray-700 mb-1 block"
+                    >
+                      Enter Confirm Password{" "}
+                      <span className="text-red-500">*</span>
+                    </label> */}
                     <input
-                      type="text"
-                      name="address"
-                      placeholder="Enter Address *"
-                      className="w-full border-b border-gray-300 p-2 outline-none focus:border-primary"
-                      {...registrationFormik.getFieldProps("address")}
+                      type={showConfirmPassword ? "text" : "password"}
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      onChange={registrationFormik.handleChange}
+                      value={registrationFormik.values.confirmPassword}
+                      onBlur={registrationFormik.handleBlur}
+                      placeholder="Enter Confirm Password *"
+                      className="w-full border-b border-gray-300 p-2 outline-none shadow_team1 focus:border-primary"
                     />
-                    {registrationFormik.touched.address &&
-                      registrationFormik.errors.address && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                      className="absolute right-3 top-[15px] text-sm text-gray500"
+                    >
+                      {showConfirmPassword ? <FiEye /> : <FiEyeOff />}
+                    </button>
+                    {registrationFormik.touched.confirmPassword &&
+                      registrationFormik.errors.confirmPassword && (
                         <span className="text-sm text-primary">
-                          {registrationFormik.errors.address}
+                          {registrationFormik.errors.confirmPassword}
                         </span>
                       )}
                   </div>
-                </div>
 
-                {/* Experience (Tutor Only) */}
-                {userType === "tutor" && (
-                  <div className="input-wrapper">
-                    <textarea
-                      name="experience"
-                      placeholder="Describe your teaching experience *"
-                      className="w-full border-b border-gray-300 p-2 outline-none focus:border-primary"
-                      rows={4}
-                      {...registrationFormik.getFieldProps("experience")}
-                    />
-                    {registrationFormik.touched.experience &&
-                      registrationFormik.errors.experience && (
-                        <span className="text-sm text-primary">
-                          {registrationFormik.errors.experience}
-                        </span>
-                      )}
-                  </div>
-                )}
-
-                {/* Category Selection */}
-                <div className="input-wrapper relative">
-                  {categoryLoading ? (
-                    <div className="flex items-center text-gray-600 gap-2">
-                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                      <span>Loading categories...</span>
-                    </div>
-                  ) : (
-                    <>
-                      <input
-                        type="text"
-                        placeholder="Search and select subject..."
-                        value={categoryInput}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setCategoryInput(val);
-                          const filtered = categories.filter((cat) =>
-                            cat.category_name
-                              .toLowerCase()
-                              .includes(val.toLowerCase())
-                          );
-                          setFilteredCategories(filtered);
-                          setShowCategorySuggestions(true);
-                        }}
-                        onFocus={() => setShowCategorySuggestions(true)}
-                        className="w-full border-b border-gray-300 p-2 outline-none focus:border-primary"
+                  <button
+                    type="submit"
+                    disabled={loading || categoryLoading}
+                    className="flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-secondary w-full rounded-md text-white p-2 transition !mt-[24px] disabled:opacity-50"
+                  >
+                    {loading && <FaSpinner className="animate-spin" />}
+                    Create New Account
+                  </button>
+                </form>
+              </div>
+              <div className="space-y-4 mb-6 lg:mb-0 text-center">
+                {/* <h3 className="text-base text-gray-700 font-medium relative mt-1">
+                  Login with TutorWise / EduWise / Social Profile
+                </h3> */}
+                <div className="flex items-center justify-center gap-4">
+                  {/* <div className="flex items-center gap-1">
+                    <a href="#" className="flex">
+                      <img
+                        src={Eduwise}
+                        alt="eduwise logo"
+                        className="h-10 border border-gray-text-gray-700"
                       />
-
-                      {showCategorySuggestions &&
-                        filteredCategories.length > 0 && (
-                          <ul className="absolute bg-white border border-gray-300 rounded-md mt-1 w-full max-h-40 overflow-y-auto shadow z-20">
-                            {filteredCategories.map((cat) => (
-                              <li
-                                key={cat.id}
-                                className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm flex items-center gap-2"
-                                onMouseDown={(e) => e.preventDefault()}
-                                onClick={() => handleCategorySelect(cat)}
-                              >
-                                <TbCategoryPlus size={16} />
-                                {cat.category_name}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-
-                      {selectedCategories.length > 0 && (
-                        <div className="mt-2 p-2 border border-gray-300 rounded-md min-h-[50px] bg-gray-50 flex flex-wrap gap-2">
-                          {selectedCategories.map((cat, i) => (
-                            <span
-                              key={i}
-                              className="inline-block bg-[#F6F4E3] text-secondary px-2 py-1 rounded-md text-sm"
-                            >
-                              {capitalize(cat)}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setSelectedCategories((prev) =>
-                                    prev.filter((c) => c !== cat)
-                                  )
-                                }
-                                className="ml-2 text-primary"
-                              >
-                                &times;
-                              </button>
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  )}
+                    </a>
+                    <a href="#" className="flex">
+                      <img
+                        src={TutorWise}
+                        alt="tutorwise logo"
+                        className="h-10 border border-gray-text-gray-700"
+                      />
+                    </a>
+                  </div>
+                  <div className="flex items-center justify-center gap-1">
+                    <a href="#" className="flex">
+                      <img
+                        src={Facebook}
+                        alt="Facebook logo"
+                        className="w-[40px]"
+                      />
+                    </a>
+                    <a href="#" className="flex">
+                      <img
+                        src={Google}
+                        alt="Google logo"
+                        className="w-[40px]"
+                      />
+                    </a>
+                    <a href="#" className="flex">
+                      <img
+                        src={Github}
+                        alt="Github logo"
+                        className="w-[40px]"
+                      />
+                    </a>
+                  </div> */}
                 </div>
-
-                {/* Password */}
-                <div className="input-wrapper relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    placeholder="Enter Password *"
-                    className="w-full border-b border-gray-300 p-2 outline-none focus:border-primary"
-                    {...registrationFormik.getFieldProps("password")}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-gray-500"
-                  >
-                    {showPassword ? <FiEye /> : <FiEyeOff />}
-                  </button>
-                  {registrationFormik.touched.password &&
-                    registrationFormik.errors.password && (
-                      <span className="text-sm text-primary">
-                        {registrationFormik.errors.password}
-                      </span>
-                    )}
+                <div>
+                  <p className="text-sm">
+                    Already have an Account?{" "}
+                    <Link
+                      to="/login"
+                      className="inline-block px-1 rounded text-primary "
+                    >
+                      SignUp Here
+                    </Link>
+                  </p>
                 </div>
-
-                {/* Confirm Password */}
-                <div className="input-wrapper relative">
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    name="confirmPassword"
-                    placeholder="Enter Confirm Password *"
-                    className="w-full border-b border-gray-300 p-2 outline-none focus:border-primary"
-                    {...registrationFormik.getFieldProps("confirmPassword")}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-3 text-gray-500"
-                  >
-                    {showConfirmPassword ? <FiEye /> : <FiEyeOff />}
-                  </button>
-                  {registrationFormik.touched.confirmPassword &&
-                    registrationFormik.errors.confirmPassword && (
-                      <span className="text-sm text-primary">
-                        {registrationFormik.errors.confirmPassword}
-                      </span>
-                    )}
-                </div>
-
-                {/* Submit */}
-                <button
-                  type="submit"
-                  disabled={loading || categoryLoading || deptLoading}
-                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-secondary w-full rounded-md text-white p-2 transition mt-6 disabled:opacity-50"
-                >
-                  {loading && <FaSpinner className="animate-spin" />}
-                  Create New Account
-                </button>
-              </form>
-
-              <div className="text-center mt-6">
-                <p className="text-sm">
-                  Already have an Account?{" "}
-                  <Link to="/login" className="text-primary">
-                    Login Here
-                  </Link>
-                </p>
               </div>
             </div>
           </div>
@@ -715,7 +806,7 @@ const Registration = () => {
   );
 };
 
-export default Registration;
+export default EventRegister;
 
 // without category list
 

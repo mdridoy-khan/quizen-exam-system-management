@@ -15,18 +15,17 @@ const CreateEventCreationForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // State for form fields
+  // Form State
   const [formData, setFormData] = useState({
     announcement_name: "",
     announcement_details: "",
-    // department_name: "",
-    // subject: "",
-    class: "",
+    class_department_id: "", // ← নতুন ফিল্ড
     question_type: "",
     address: "",
     exam_type: "",
     organizer_name: "",
     round_number: "",
+    department_name: "",
     total_days: "",
     terms_condition: "",
     price_money: "",
@@ -52,7 +51,14 @@ const CreateEventCreationForm = () => {
     { item_name: "", quantity: "" },
   ]);
 
-  // Handle input changes
+  // Class/Department Autocomplete
+  const [classDepartments, setClassDepartments] = useState([]);
+  const [filteredDepartments, setFilteredDepartments] = useState([]);
+  const [showDeptSuggestions, setShowDeptSuggestions] = useState(false);
+  const [deptInput, setDeptInput] = useState("");
+  const [deptLoading, setDeptLoading] = useState(false);
+
+  // Handle Input Change
   const handleInputChange = (e) => {
     const { id, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -61,25 +67,24 @@ const CreateEventCreationForm = () => {
     }));
   };
 
-  // Handle date formatting for API
-  const formatDateForAPI = (date) => {
-    return date ? format(date, "yyyy-MM-dd") : "";
-  };
+  // Date Format
+  const formatDateForAPI = (date) => (date ? format(date, "yyyy-MM-dd") : "");
 
-  // Handle exciting price checkbox
+  // Exciting Price Checkbox
   const handleExcitingPrice = (e) => {
-    setFormData((prev) => ({ ...prev, is_exciting_price: e.target.checked }));
-    if (e.target.checked && excitingPrices.length === 0) {
+    const checked = e.target.checked;
+    setFormData((prev) => ({ ...prev, is_exciting_price: checked }));
+    if (checked && excitingPrices.length === 0) {
       setExcitingPrices([{ item_name: "", quantity: "" }]);
     }
   };
 
-  // Handle adding exciting price
+  // Add Exciting Price
   const handleAddExcitingPrice = () => {
     setExcitingPrices([...excitingPrices, { item_name: "", quantity: "" }]);
   };
 
-  // Handle exciting price input changes
+  // Update Exciting Price
   const handleExcitingPriceChange = (index, field, value) => {
     const updated = [...excitingPrices];
     if (field === "quantity") {
@@ -90,7 +95,7 @@ const CreateEventCreationForm = () => {
     setExcitingPrices(updated);
   };
 
-  // Handle file input changes with preview
+  // File Handlers
   const handleEventImageChange = (e) => {
     const file = e.target.files[0];
     setEventImageAttempted(true);
@@ -98,15 +103,13 @@ const CreateEventCreationForm = () => {
       setEventImage(file);
       setEventImageName(file.name);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setEventImagePreview(reader.result);
-      };
+      reader.onloadend = () => setEventImagePreview(reader.result);
       reader.readAsDataURL(file);
     } else {
       setEventImage(null);
       setEventImageName("No file chosen");
       setEventImagePreview(null);
-      toast.error("Please upload a valid image file for event image.");
+      toast.error("Please upload a valid image.");
     }
   };
 
@@ -117,159 +120,137 @@ const CreateEventCreationForm = () => {
       setBannerImage(file);
       setBannerImageName(file.name);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setBannerImagePreview(reader.result);
-      };
+      reader.onloadend = () => setBannerImagePreview(reader.result);
       reader.readAsDataURL(file);
     } else {
       setBannerImage(null);
       setBannerImageName("No file chosen");
       setBannerImagePreview(null);
-      toast.error("Please upload a valid image file for banner image.");
+      toast.error("Please upload a valid image.");
     }
   };
 
-  // Validate exciting prices
+  // Validate Exciting Prices
   const validateExcitingPrices = () => {
-    if (formData.is_exciting_price) {
-      return excitingPrices.every(
-        (price) =>
-          price.item_name?.toString().trim() !== "" &&
-          price.quantity !== null &&
-          price.quantity.toString().trim() !== ""
-      );
-    }
-    return true;
+    if (!formData.is_exciting_price) return true;
+    return excitingPrices.every(
+      (p) => p.item_name?.trim() && p.quantity !== "" && p.quantity !== null
+    );
   };
 
-  // Fetch announcement data with image preview validation
+  // Fetch Class/Departments
   useEffect(() => {
-    const fetchAnnouncement = async () => {
-      if (!id) return;
-
+    const fetchDepartments = async () => {
       try {
-        const response = await API.get(`${API_ENDPOINS.OWN_DATA}${id}/`);
-        const announcement = response.data.data;
-
-        if (announcement) {
-          // set form fields
-          setFormData({
-            announcement_name: announcement.announcement_name || "",
-            announcement_details: announcement.announcement_details || "",
-            // department_name: announcement.department_name || "",
-            class: announcement.class || "",
-            // subject: announcement.subject || "",
-            question_type: announcement.question_type || "",
-            address: announcement.address || "",
-            exam_type: announcement.exam_type || "",
-            organizer_name: announcement.organizer_name || "",
-            round_number: announcement.round_number || "",
-            total_days: announcement.total_days || "",
-            terms_condition: announcement.terms_condition || "",
-            price_money: announcement.price_money || "",
-            is_pricemoney: announcement.is_pricemoney || false,
-            is_certificate: announcement.is_certificate || false,
-            is_exciting_price: announcement.is_exciting_price || false,
-            tutor_share_qes_number: announcement.tutor_share_qes_number || "",
-          });
-
-          setStartDate(
-            announcement.registration_start_date
-              ? new Date(announcement.registration_start_date)
-              : null
-          );
-          setEndDate(
-            announcement.registration_end_date
-              ? new Date(announcement.registration_end_date)
-              : null
-          );
-
-          // peview banner image and event image
-          if (announcement.announcement_event_image) {
-            const imageUrl = announcement.announcement_event_image.startsWith(
-              "http"
-            )
-              ? announcement.announcement_event_image
-              : `http://192.168.0.240:8001${announcement.announcement_event_image}`;
-
-            setEventImagePreview(imageUrl);
-            // setEventImageName(imageUrl);
-          }
-
-          if (announcement.announcement_event_banner) {
-            const bannerUrl = announcement.announcement_event_banner.startsWith(
-              "http"
-            )
-              ? announcement.announcement_event_banner
-              : `http://192.168.0.240:8001${announcement.announcement_event_banner}`;
-
-            setBannerImagePreview(bannerUrl);
-            // setBannerImageName(bannerUrl);
-          }
-          // Exciting prices
-          if (
-            announcement.is_exciting_price &&
-            announcement.exciting_prizes?.length > 0
-          ) {
-            setExcitingPrices(announcement.exciting_prizes);
-          } else {
-            setExcitingPrices([{ item_name: "", quantity: "" }]);
-          }
+        setDeptLoading(true);
+        const res = await API.get(API_ENDPOINS.CLASS_DEPARTMENT);
+        if (res.data && Array.isArray(res.data)) {
+          setClassDepartments(res.data);
         }
       } catch (err) {
-        console.error("Error fetching announcement:", err);
-        toast.error("Failed to fetch announcement data. Please try again.");
+        console.error("Error fetching departments:", err);
+        toast.error("Failed to load class/departments.");
+      } finally {
+        setDeptLoading(false);
+      }
+    };
+    fetchDepartments();
+  }, []);
+
+  // Fetch Edit Data
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchAnnouncement = async () => {
+      try {
+        const response = await API.get(`${API_ENDPOINS.OWN_DATA}${id}/`);
+        const data = response.data.data;
+
+        setFormData({
+          announcement_name: data.announcement_name || "",
+          announcement_details: data.announcement_details || "",
+          class_department_id: data.class_department?.id?.toString() || "",
+          question_type: data.question_type || "",
+          address: data.address || "",
+          exam_type: data.exam_type || "",
+          organizer_name: data.organizer_name || "",
+          round_number: data.round_number || "",
+          total_days: data.total_days || "",
+          terms_condition: data.terms_condition || "",
+          price_money: data.price_money || "",
+          is_pricemoney: data.is_pricemoney || false,
+          is_certificate: data.is_certificate || false,
+          is_exciting_price: data.is_exciting_price || false,
+          tutor_share_qes_number: data.tutor_share_qes_number || "",
+        });
+
+        setStartDate(
+          data.registration_start_date
+            ? new Date(data.registration_start_date)
+            : null
+        );
+        setEndDate(
+          data.registration_end_date
+            ? new Date(data.registration_end_date)
+            : null
+        );
+
+        // Set department name in input
+        if (data.class_department?.class_department) {
+          setDeptInput(data.class_department.class_department);
+        }
+
+        // Images
+        if (data.announcement_event_image) {
+          const url = data.announcement_event_image.startsWith("http")
+            ? data.announcement_event_image
+            : `http://192.168.0.240:8001${data.announcement_event_image}`;
+          setEventImagePreview(url);
+        }
+        if (data.announcement_event_banner) {
+          const url = data.announcement_event_banner.startsWith("http")
+            ? data.announcement_event_banner
+            : `http://192.168.0.240:8001${data.announcement_event_banner}`;
+          setBannerImagePreview(url);
+        }
+
+        // Exciting prices
+        if (data.is_exciting_price && data.exciting_prizes?.length > 0) {
+          setExcitingPrices(data.exciting_prizes);
+        } else {
+          setExcitingPrices([{ item_name: "", quantity: "" }]);
+        }
+      } catch (err) {
+        toast.error("Failed to load data.");
       }
     };
 
     fetchAnnouncement();
   }, [id]);
 
-  // Submit form data to API
+  // Submit
   const postData = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    // Enhanced validation with toast notifications
-    if (!formData.announcement_name) {
-      toast.error("Please enter an announcement name.");
-      setLoading(false);
-      return;
-    }
-    if (!eventImage && !id) {
-      toast.error("Please upload an event image.");
-      setLoading(false);
-      return;
-    }
-    if (!bannerImage && !id) {
-      toast.error("Please upload a banner image.");
-      setLoading(false);
-      return;
-    }
-    if (!startDate || !endDate) {
-      toast.error("Please select both start and end dates.");
-      setLoading(false);
-      return;
-    }
-    if (formData.is_pricemoney && !formData.price_money) {
-      toast.error("Please enter the price money amount.");
-      setLoading(false);
-      return;
-    }
-    if (!validateExcitingPrices()) {
-      toast.error("Please fill in all exciting price details.");
-      setLoading(false);
-      return;
-    }
+    // Validation
+    if (!formData.announcement_name) return toast.error("Event name required.");
+    if (!formData.class_department_id)
+      return toast.error("Please select Class/Department.");
+    if (!eventImage && !id) return toast.error("Event image required.");
+    if (!bannerImage && !id) return toast.error("Banner image required.");
+    if (!startDate || !endDate) return toast.error("Select both dates.");
+    if (formData.is_pricemoney && !formData.price_money)
+      return toast.error("Enter price money.");
+    if (!validateExcitingPrices())
+      return toast.error("Fill all exciting price details.");
 
     const data = new FormData();
 
-    // Append text fields
+    // Text fields
     Object.keys(formData).forEach((key) => {
       if (
-        key === "is_pricemoney" ||
-        key === "is_certificate" ||
-        key === "is_exciting_price"
+        ["is_pricemoney", "is_certificate", "is_exciting_price"].includes(key)
       ) {
         data.append(key, formData[key].toString());
       } else {
@@ -277,147 +258,34 @@ const CreateEventCreationForm = () => {
       }
     });
 
-    // Append dates
     data.append("registration_start_date", formatDateForAPI(startDate));
     data.append("registration_end_date", formatDateForAPI(endDate));
 
-    // Append files (only if new files are uploaded)
-    if (eventImage) {
-      data.append("announcement_event_image", eventImage);
-    }
-    if (bannerImage) {
-      data.append("announcement_event_banner", bannerImage);
-    }
-
-    // Append exciting prices
+    if (eventImage) data.append("announcement_event_image", eventImage);
+    if (bannerImage) data.append("announcement_event_banner", bannerImage);
     if (formData.is_exciting_price) {
       data.append("exciting_prizes", JSON.stringify(excitingPrices));
     }
 
     try {
-      let response;
       if (id) {
-        response = await API.put(
-          `${API_ENDPOINS.UPDATE_QUIZCARD}${id}/`,
-          data,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        );
-        toast.success("Announcement updated successfully!");
-      } else {
-        response = await API.post(API_ENDPOINS.CREATE_ANNOUNCEMENT, data, {
+        await API.put(`${API_ENDPOINS.UPDATE_QUIZCARD}${id}/`, data, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        toast.success("Announcement created successfully!");
+        toast.success("Updated successfully!");
+      } else {
+        await API.post(API_ENDPOINS.CREATE_ANNOUNCEMENT, data, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        toast.success("Created successfully!");
       }
-
       navigate("/president/announcement-list");
     } catch (err) {
-      console.error("API Error:", err.response?.data || err.message);
-      toast.error(
-        err.response?.data?.message ||
-          "Failed to submit form. Please check your inputs and try again."
-      );
+      toast.error(err.response?.data?.message || "Submission failed.");
     } finally {
-      // Always stop loading (success or error both case)
       setLoading(false);
     }
   };
-
-  // const postData = async (e) => {
-  //   e.preventDefault();
-  //   setLoading(true);
-
-  //   // Enhanced validation with toast notifications
-  //   if (!formData.announcement_name) {
-  //     toast.error("Please enter an announcement name.");
-  //     return;
-  //   }
-  //   if (!eventImage && !id) {
-  //     toast.error("Please upload an event image.");
-  //     return;
-  //   }
-  //   if (!bannerImage && !id) {
-  //     toast.error("Please upload a banner image.");
-  //     return;
-  //   }
-  //   if (!startDate || !endDate) {
-  //     toast.error("Please select both start and end dates.");
-  //     return;
-  //   }
-  //   if (formData.is_pricemoney && !formData.price_money) {
-  //     toast.error("Please enter the price money amount.");
-  //     return;
-  //   }
-  //   if (!validateExcitingPrices()) {
-  //     toast.error("Please fill in all exciting price details.");
-  //     return;
-  //   }
-
-  //   const data = new FormData();
-
-  //   // Append text fields
-  //   Object.keys(formData).forEach((key) => {
-  //     if (
-  //       key === "is_pricemoney" ||
-  //       key === "is_certificate" ||
-  //       key === "is_exciting_price"
-  //     ) {
-  //       data.append(key, formData[key].toString());
-  //     } else {
-  //       data.append(key, formData[key]);
-  //     }
-  //   });
-
-  //   // Append dates
-  //   data.append("registration_start_date", formatDateForAPI(startDate));
-  //   data.append("registration_end_date", formatDateForAPI(endDate));
-
-  //   // Append files (only if new files are uploaded)
-  //   if (eventImage) {
-  //     data.append("announcement_event_image", eventImage);
-  //   }
-  //   if (bannerImage) {
-  //     data.append("announcement_event_banner", bannerImage);
-  //   }
-
-  //   // Append exciting prices
-  //   if (formData.is_exciting_price) {
-  //     data.append("exciting_prizes", JSON.stringify(excitingPrices));
-  //   }
-
-  //   try {
-  //     let response;
-  //     if (id) {
-  //       response = await API.put(
-  //         `${API_ENDPOINS.UPDATE_QUIZCARD}${id}/`,
-  //         data,
-  //         {
-  //           headers: {
-  //             "Content-Type": "multipart/form-data",
-  //           },
-  //         }
-  //       );
-  //       toast.success("Announcement updated successfully!");
-  //     } else {
-  //       response = await API.post(API_ENDPOINS.CREATE_ANNOUNCEMENT, data, {
-  //         headers: {
-  //           "Content-Type": "multipart/form-data",
-  //         },
-  //       });
-  //       toast.success("Announcement created successfully!");
-  //     }
-
-  //     navigate("/president/announcement-list");
-  //   } catch (err) {
-  //     console.error("API Error:", err.response?.data || err.message);
-  //     toast.error(
-  //       err.response?.data?.message ||
-  //         "Failed to submit form. Please check your inputs and try again."
-  //     );
-  //   }
-  // };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -425,39 +293,37 @@ const CreateEventCreationForm = () => {
         <h3 className="text-2xl font-semibold text-gray-800 mb-8 text-center">
           {id ? "Edit Event" : "Event Creation Form"}
         </h3>
+
         <form
           onSubmit={postData}
           encType="multipart/form-data"
           className="space-y-4"
         >
+          {/* Event Name, Organizer, Round */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* announcement name */}
             <div className="input-wrapper">
               <label
                 htmlFor="announcement_name"
                 className="text-sm font-medium text-gray700 mb-1 block"
               >
-                Event Name
-                <span className="text-sm text-red500 ml-1">*</span>
+                Event Name <span className="text-red500">*</span>
               </label>
               <input
                 type="text"
                 id="announcement_name"
-                placeholder="Enter Announcement Name"
+                placeholder="Enter Event Name"
                 value={formData.announcement_name}
                 onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
+                className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary outline-none bg-gray-50"
               />
             </div>
 
-            {/* organization Name */}
             <div className="input-wrapper">
               <label
                 htmlFor="organizer_name"
                 className="text-sm font-medium text-gray700 mb-1 block"
               >
-                Organization Name
-                <span className="text-sm text-red500 ml-1">*</span>
+                Organization Name <span className="text-red500">*</span>
               </label>
               <input
                 type="text"
@@ -465,17 +331,16 @@ const CreateEventCreationForm = () => {
                 placeholder="Enter Organization Name"
                 value={formData.organizer_name}
                 onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
+                className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary outline-none bg-gray-50"
               />
             </div>
-            {/* rounder number */}
+
             <div className="input-wrapper">
               <label
                 htmlFor="round_number"
                 className="text-sm font-medium text-gray700 mb-1 block"
               >
-                Round Number
-                <span className="text-sm text-red500 ml-1">*</span>
+                Round Number <span className="text-red500">*</span>
               </label>
               <input
                 type="number"
@@ -483,11 +348,12 @@ const CreateEventCreationForm = () => {
                 placeholder="Enter Round Number"
                 value={formData.round_number}
                 onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
+                className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary outline-none bg-gray-50"
               />
             </div>
           </div>
 
+          {/* Dates & Total Days */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* registration start date */}
             <div className="input-wrapper w-full datepicker relative">
@@ -533,14 +399,13 @@ const CreateEventCreationForm = () => {
                 <FaRegCalendarAlt className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray500 pointer-events-none" />
               </div>
             </div>
-            {/* total days */}
+
             <div className="input-wrapper">
               <label
                 htmlFor="total_days"
                 className="text-sm font-medium text-gray700 mb-1 block"
               >
-                Total Days
-                <span className="text-sm text-red500 ml-1">*</span>
+                Total Days <span className="text-red500">*</span>
               </label>
               <input
                 type="number"
@@ -548,73 +413,83 @@ const CreateEventCreationForm = () => {
                 placeholder="Enter Total Days"
                 value={formData.total_days}
                 onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
+                className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary outline-none bg-gray-50"
               />
             </div>
           </div>
 
+          {/* Class/Department Autocomplete */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* subject name */}
-            {/* <div className="input-wrapper">
-              <label
-                htmlFor="subject"
-                className="text-sm font-medium text-gray700 mb-1 block"
-              >
-                Subject
-                <span className="text-sm text-red500 ml-1">*</span>
+            <div className="input-wrapper relative">
+              <label className="text-sm font-medium text-gray700 mb-1 block">
+                Class/Department <span className="text-red500">*</span>
               </label>
-              <input
-                type="text"
-                id="subject"
-                placeholder="Enter Subject Name"
-                value={formData.subject}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
-              />
-            </div> */}
-            {/* department name */}
-            {/* <div className="input-wrapper">
-              <label
-                htmlFor="department_name"
-                className="text-sm font-medium text-gray700 mb-1 block"
-              >
-                Department
-                <span className="text-sm text-red500 ml-1">*</span>
-              </label>
-              <input
-                type="text"
-                id="department_name"
-                placeholder="Enter Department Name"
-                value={formData.department_name}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
-              />
-            </div> */}
-            <div className="input-wrapper">
-              <label
-                htmlFor="class"
-                className="text-sm font-medium text-gray700 mb-1 block"
-              >
-                Class
-                <span className="text-sm text-red500 ml-1">*</span>
-              </label>
-              <input
-                type="text"
-                id="class"
-                placeholder="Enter Class Name"
-                value={formData.class}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
-              />
+
+              {deptLoading ? (
+                <div className="flex items-center gap-2 text-gray-600">
+                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Loading...</span>
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    value={deptInput}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setDeptInput(val);
+                      const filtered = classDepartments.filter((d) =>
+                        d.class_department
+                          .toLowerCase()
+                          .includes(val.toLowerCase())
+                      );
+                      setFilteredDepartments(filtered);
+                      setShowDeptSuggestions(true);
+                    }}
+                    onFocus={() => setShowDeptSuggestions(true)}
+                    placeholder="Search Class/Department"
+                    className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary outline-none bg-gray-50"
+                  />
+
+                  {showDeptSuggestions && filteredDepartments.length > 0 && (
+                    <ul className="absolute bg-white border border-gray-300 rounded-md mt-1 w-full max-h-40 overflow-y-auto shadow z-20">
+                      {filteredDepartments.map((dept) => (
+                        <li
+                          key={dept.id}
+                          className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              class_department_id: dept.id.toString(),
+                            }));
+                            setDeptInput(dept.class_department);
+                            setShowDeptSuggestions(false);
+                          }}
+                        >
+                          {dept.class_department}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {showDeptSuggestions &&
+                    filteredDepartments.length === 0 &&
+                    deptInput && (
+                      <div className="absolute bg-white border border-gray-300 rounded-md mt-1 w-full p-2 text-sm text-gray-500">
+                        No department found
+                      </div>
+                    )}
+                </>
+              )}
             </div>
-            {/* tutor share questions */}
+
             <div className="input-wrapper">
               <label
                 htmlFor="tutor_share_qes_number"
                 className="text-sm font-medium text-gray700 mb-1 block"
               >
-                Tutor Share Question
-                <span className="text-sm text-red500 ml-1">*</span>
+                Tutor Share Question <span className="text-red500">*</span>
               </label>
               <input
                 type="number"
@@ -622,48 +497,45 @@ const CreateEventCreationForm = () => {
                 placeholder="Share question"
                 value={formData.tutor_share_qes_number}
                 onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
+                className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary outline-none bg-gray-50"
               />
             </div>
           </div>
 
+          {/* Question Type & Exam Type */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* question types */}
             <div className="input-wrapper">
               <label
                 htmlFor="question_type"
                 className="text-sm font-medium text-gray700 mb-1 block"
               >
-                Question Type
-                <span className="text-sm text-red500 ml-1">*</span>
+                Question Type <span className="text-red500">*</span>
               </label>
               <select
                 id="question_type"
                 value={formData.question_type}
                 onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
+                className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary outline-none bg-gray-50"
               >
-                <option value="">Select Question Type</option>
-                {/* <option value="multiple">Multiple</option> */}
+                <option value="">Select</option>
                 <option value="mcq">MCQ</option>
               </select>
             </div>
-            {/* exam types */}
+
             <div className="input-wrapper">
               <label
                 htmlFor="exam_type"
                 className="text-sm font-medium text-gray700 mb-1 block"
               >
-                Exam Type
-                <span className="text-sm text-red500 ml-1">*</span>
+                Exam Type <span className="text-red500">*</span>
               </label>
               <select
                 id="exam_type"
                 value={formData.exam_type}
                 onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
+                className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary outline-none bg-gray-50"
               >
-                <option value="">Select Exam Type</option>
+                <option value="">Select</option>
                 <option value="online">Online</option>
                 <option value="offline">Offline</option>
                 <option value="mix">Mix</option>
@@ -671,166 +543,137 @@ const CreateEventCreationForm = () => {
             </div>
           </div>
 
-          <div className="input-group grid grid-cols-2 sm:grid-cols-3 items-center py-5 gap-4">
-            {/* price money */}
-            <div className="input-wrapper flex items-center gap-1">
+          {/* Checkboxes */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 py-5">
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 id="is_pricemoney"
                 checked={formData.is_pricemoney}
                 onChange={handleInputChange}
-                className="appearance-none w-4 h-4 border border-gray400 rounded-sm checked:bg-blue500 checked:border-transparent flex items-center justify-center"
+                className="w-4 h-4 rounded border-gray-400"
               />
-              <label
-                htmlFor="is_pricemoney"
-                className="text-sm cursor-pointer font-medium text-gray700"
-              >
-                Is Price Money?
-                <span className="text-sm text-red500 ml-1">*</span>
-              </label>
-            </div>
-            {/* certificate */}
-            <div className="input-wrapper flex items-center gap-1">
+              <span className="text-sm font-medium text-gray700">
+                Is Price Money? <span className="text-red500">*</span>
+              </span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 id="is_certificate"
                 checked={formData.is_certificate}
                 onChange={handleInputChange}
-                className="appearance-none w-4 h-4 border border-gray400 rounded-sm checked:bg-blue500 checked:border-transparent flex items-center justify-center"
+                className="w-4 h-4 rounded border-gray-400"
               />
-              <label
-                htmlFor="is_certificate"
-                className="text-sm font-medium text-gray700 cursor-pointer"
-              >
+              <span className="text-sm font-medium text-gray700">
                 Is Certificate?
-              </label>
-            </div>
-            {/* exciting price */}
-            <div className="input-wrapper flex items-center gap-1">
+              </span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 id="is_exciting_price"
                 checked={formData.is_exciting_price}
                 onChange={handleExcitingPrice}
-                className="appearance-none w-4 h-4 border border-gray400 rounded-sm checked:bg-blue500 checked:border-transparent flex items-center justify-center"
+                className="w-4 h-4 rounded border-gray-400"
               />
-              <label
-                htmlFor="is_exciting_price"
-                className="text-sm font-medium text-gray700 cursor-pointer"
-              >
+              <span className="text-sm font-medium text-gray700">
                 Is Exciting Price?
-              </label>
-            </div>
+              </span>
+            </label>
           </div>
 
+          {/* Price Money */}
           {formData.is_pricemoney && (
-            <div className="input-wrapper mt-2">
+            <div className="input-wrapper">
               <label
                 htmlFor="price_money"
                 className="text-sm font-medium text-gray700 mb-1 block"
               >
-                Price Money
-                <span className="text-sm text-red500 ml-1">*</span>
+                Price Money <span className="text-red500">*</span>
               </label>
               <input
                 type="number"
                 id="price_money"
-                placeholder="Enter Price Money"
+                placeholder="Enter Amount"
                 value={formData.price_money}
                 onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
+                className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary outline-none bg-gray-50"
               />
             </div>
           )}
 
+          {/* Exciting Prices */}
           {formData.is_exciting_price &&
             excitingPrices.map((entry, index) => (
-              <div key={index} className="input-group mt-2 relative">
-                <div className="grid grid-cols-[87%_13%]">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="input-wrapper">
-                      <label
-                        htmlFor={`item_name-${index}`}
-                        className="text-sm font-medium text-gray700 mb-1 block"
-                      >
-                        Item Name
-                      </label>
-                      <input
-                        type="text"
-                        id={`item_name-${index}`}
-                        placeholder="Enter Item Name"
-                        value={entry.item_name}
-                        onChange={(e) =>
-                          handleExcitingPriceChange(
-                            index,
-                            "item_name",
-                            e.target.value
-                          )
-                        }
-                        className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
-                      />
-                    </div>
-                    <div className="input-wrapper relative">
-                      <label
-                        htmlFor={`quantity-${index}`}
-                        className="text-sm font-medium text-gray700 mb-1 block"
-                      >
-                        Quantity
-                      </label>
-                      <input
-                        type="number"
-                        id={`quantity-${index}`}
-                        placeholder="Enter Quantity"
-                        value={entry.quantity}
-                        onChange={(e) =>
-                          handleExcitingPriceChange(
-                            index,
-                            "quantity",
-                            e.target.value
-                          )
-                        }
-                        className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    {index === excitingPrices.length - 1 && (
-                      <button
-                        type="button"
-                        onClick={handleAddExcitingPrice}
-                        className="absolute right-2 bottom-2 text-lg bg-blue500 text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-blue600"
-                        title="Add More"
-                      >
-                        <FiPlus size={18} />
-                      </button>
-                    )}
-                    {excitingPrices.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const updated = [...excitingPrices];
-                          updated.splice(index, 1);
-                          setExcitingPrices(updated);
-                        }}
-                        className="absolute right-10 bottom-2 text-lg bg-red500 text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-red-600"
-                        title="Remove"
-                      >
-                        <FiMinus size={18} />
-                      </button>
-                    )}
-                  </div>
+              <div
+                key={index}
+                className="grid grid-cols-[85%_15%] gap-2 items-end"
+              >
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Item Name"
+                    value={entry.item_name}
+                    onChange={(e) =>
+                      handleExcitingPriceChange(
+                        index,
+                        "item_name",
+                        e.target.value
+                      )
+                    }
+                    className="border border-gray-300 rounded-md p-2.5 focus:border-primary outline-none bg-gray-50"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Quantity"
+                    value={entry.quantity}
+                    onChange={(e) =>
+                      handleExcitingPriceChange(
+                        index,
+                        "quantity",
+                        e.target.value
+                      )
+                    }
+                    className="border border-gray-300 rounded-md p-2.5 focus:border-primary outline-none bg-gray-50"
+                  />
+                </div>
+                <div className="flex gap-1">
+                  {index === excitingPrices.length - 1 && (
+                    <button
+                      type="button"
+                      onClick={handleAddExcitingPrice}
+                      className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-600"
+                    >
+                      <FiPlus />
+                    </button>
+                  )}
+                  {excitingPrices.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExcitingPrices((exc) =>
+                          exc.filter((_, i) => i !== index)
+                        )
+                      }
+                      className="bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600"
+                    >
+                      <FiMinus />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
 
-          {/* address */}
+          {/* Address */}
           <div className="input-wrapper">
             <label
               htmlFor="address"
               className="text-sm font-medium text-gray700 mb-1 block"
             >
-              Address
-              <span className="text-sm text-red500 ml-1">*</span>
+              Address <span className="text-red500">*</span>
             </label>
             <input
               type="text"
@@ -838,7 +681,7 @@ const CreateEventCreationForm = () => {
               placeholder="Enter Address"
               value={formData.address}
               onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-md px-2.5 py-5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
+              className="w-full border border-gray-300 rounded-md px-2.5 py-5 focus:border-primary outline-none bg-gray-50"
             />
           </div>
 
@@ -935,52 +778,47 @@ const CreateEventCreationForm = () => {
             </div>
           </div>
 
-          {/* terms and conditons */}
+          {/* Terms & Details */}
           <div className="input-wrapper">
             <label
               htmlFor="terms_condition"
               className="text-sm font-medium text-gray700 mb-1 block"
             >
-              Terms & Condition
-              <span className="text-sm text-red500 ml-1">*</span>
+              Terms & Condition <span className="text-red500">*</span>
             </label>
             <textarea
               id="terms_condition"
-              placeholder="Enter Terms & Condition"
+              placeholder="Enter Terms"
               value={formData.terms_condition}
               onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50 h-32"
-            ></textarea>
+              className="w-full border border-gray-300 rounded-md p-2.5 h-32 focus:border-primary outline-none bg-gray-50"
+            />
           </div>
 
-          {/* announcement details */}
           <div className="input-wrapper">
             <label
               htmlFor="announcement_details"
               className="text-sm font-medium text-gray700 mb-1 block"
             >
-              Announcement Details
-              <span className="text-sm text-red500 ml-1">*</span>
+              Announcement Details <span className="text-red500">*</span>
             </label>
             <textarea
               id="announcement_details"
-              placeholder="Enter Announcement Details"
+              placeholder="Enter Details"
               value={formData.announcement_details}
               onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50 h-32"
-            ></textarea>
+              className="w-full border border-gray-300 rounded-md p-2.5 h-32 focus:border-primary outline-none bg-gray-50"
+            />
           </div>
 
-          <div className="flex items-center justify-center">
+          {/* Submit */}
+          <div className="text-center">
             <button
               type="submit"
               disabled={loading}
-              className={`rounded-md text-white py-2 px-8 transition mt-6 flex items-center justify-center gap-2
-      ${
-        loading
-          ? "bg-secondary/60 cursor-not-allowed"
-          : "bg-secondary hover:bg-primary"
-      }`}
+              className={`px-8 py-2 rounded-md text-white flex items-center gap-2 mx-auto transition ${
+                loading ? "bg-gray-500" : "bg-secondary hover:bg-primary"
+              }`}
             >
               {loading && <FaSpinner className="animate-spin" />}
               {id
@@ -994,18 +832,8 @@ const CreateEventCreationForm = () => {
           </div>
         </form>
       </div>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-      />
+
+      <ToastContainer position="top-right" autoClose={3000} theme="colored" />
     </div>
   );
 };
