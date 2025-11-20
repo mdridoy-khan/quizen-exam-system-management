@@ -36,7 +36,7 @@ const PresidentEvents = () => {
 
   useEffect(() => {
     fetchAnnouncements(
-      `${API_ENDPOINS.GET_ANNOUNCEMENTS}?limit=${limit}&offset=0`
+      `${API_ENDPOINS.GET_EVENT_LIST}?limit=${limit}&offset=0`
     );
   }, []);
 

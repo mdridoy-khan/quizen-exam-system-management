@@ -121,25 +121,26 @@ const RoundList = () => {
   return (
     <div className="max-w-5xl mx-auto p-6">
       {/* Round Header Card */}
-      <div className="bg-white shadow-lg rounded-2xl border border-gray-100 overflow-hidden">
-        <div className="p-6">
-          <h2 className="text-3xl font-bold text-gray-800 mb-6">
-            {announcement.round_name}
-          </h2>
+      <div className="bg-white shadow-lg rounded-2xl border border-gray-100 overflow-hidden p-6 max-w-6xl mx-auto">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">
+          {announcement.round_name}
+        </h2>
 
-          {/* Study Material */}
-          {announcement.study_material && (
-            <div className="mb-6">
+        {/* 3 COLUMN GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* LEFT — STUDY MATERIAL (SMALLER WIDTH) */}
+          <div className="lg:col-span-3 flex flex-col">
+            {announcement.study_material && (
               <img
                 src={announcement.study_material}
                 alt="Study Material"
-                className="w-full h-72 object-cover rounded-xl shadow-md"
+                className="w-full h-60 object-cover rounded-xl shadow-md"
               />
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Details Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          {/* MIDDLE — DETAILS GRID (BIG WIDTH) */}
+          <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               { label: "Announcement", value: announcement.announcement_name },
               { label: "Department", value: announcement.department },
@@ -163,42 +164,46 @@ const RoundList = () => {
               },
             ].map((item, idx) => (
               <div key={idx} className="bg-gray-50 p-4 rounded-xl">
-                <p className="text-sm text-gray-500">{item.label}</p>
-                <p className="font-semibold text-gray-800">{item.value}</p>
+                <p className="text-xs text-gray-500">{item.label}</p>
+                <p className="font-semibold text-gray-800 text-sm">
+                  {item.value}
+                </p>
               </div>
             ))}
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-wrap items-center justify-center gap-6">
+          {/* RIGHT — BUTTONS (SMALLER WIDTH) */}
+          <div className="lg:col-span-3 flex flex-col items-center lg:items-stretch gap-4">
             <button
               onClick={toggleParticipants}
-              className={`flex items-center justify-center gap-3 py-3 px-8 text-white font-semibold rounded-lg transition ${
+              className={`flex items-center justify-center gap-2 py-3 px-4 text-white text-sm font-semibold rounded-lg transition w-full ${
                 showParticipants
                   ? "bg-primary"
                   : "bg-secondary hover:bg-primary"
               }`}
             >
-              VIEW PARTICIPANTS <TbListDetails className="text-xl" />
+              VIEW PARTICIPANTS <TbListDetails className="text-lg" />
             </button>
 
-            <div className="relative group">
+            <div className="relative group w-full">
               <button
                 onClick={openModal}
-                disabled={announcement.is_created_quiz}
-                className={`flex items-center justify-center gap-3 py-3 px-8 text-white font-semibold rounded-lg transition ${
-                  announcement.is_created_quiz
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-secondary hover:bg-primary"
-                }`}
+                // disabled={announcement.is_created_quiz}
+                className="flex items-center justify-center gap-2 py-3 bg-secondary hover:bg-primary px-4 text-white text-sm font-semibold rounded-lg transition w-full"
+                // className={`flex items-center justify-center gap-2 py-3 bg-secondary hover:bg-primary px-4 text-white text-sm font-semibold rounded-lg transition w-full ${
+                //   announcement.is_created_quiz
+                //     ? "bg-gray-400 cursor-not-allowed"
+                //     : "bg-secondary hover:bg-primary"
+                // }`}
               >
-                CREATE QUIZ <LuCirclePlus className="text-xl" />
+                CREATE QUIZ <LuCirclePlus className="text-lg" />
               </button>
-              {announcement.is_created_quiz && (
-                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-xs font-medium bg-black text-white rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-10">
+
+              {/* {announcement.is_created_quiz && (
+                <span className="absolute left-1/2 -translate-x-1/2 -top-8 px-2 py-1 text-[10px] font-medium bg-black text-white rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
                   1 Question set already submitted
                 </span>
-              )}
+              )} */}
             </div>
           </div>
         </div>
@@ -225,9 +230,6 @@ const RoundList = () => {
                   <h4 className="text-lg font-semibold text-gray-800">
                     {item.subject || "Untitled Quiz Set"}
                   </h4>
-                  <span className="text-xs px-2 py-1 bg-primary text-white rounded">
-                    ID: {item.id}
-                  </span>
                 </div>
 
                 <div className="space-y-2 text-sm text-gray-700">
@@ -251,14 +253,14 @@ const RoundList = () => {
                   </div>
                 </div>
 
-                <div className="mt-5">
+                {/* <div className="mt-5">
                   <Link
                     to={`/president/quiz-set/details/${item.id}`}
                     className="block text-center py-2.5 bg-secondary hover:bg-primary text-white font-semibold rounded-lg transition"
                   >
                     View Details
                   </Link>
-                </div>
+                </div> */}
               </div>
             ))}
           </div>
@@ -302,7 +304,7 @@ const RoundList = () => {
               <IoClose size={28} />
             </button>
 
-            <h2 className="text-2xl font-bold text-center mb-8">
+            <h2 className="text-2xl font-bold text-center my-8">
               Choose a method to create your quiz
             </h2>
 
@@ -310,7 +312,7 @@ const RoundList = () => {
               <Link
                 to={`/president/create-quiz/ai/${quizCreationData.roundId}/${quizCreationData.annId}`}
                 onClick={closeModal}
-                className="block w-full text-center py-4 bg-secondary hover:bg-primary text-white font-semibold rounded-lg transition"
+                className="block w-full text-center py-3 bg-secondary hover:bg-primary text-white font-semibold rounded-lg transition"
               >
                 AI Generated
               </Link>
@@ -318,16 +320,16 @@ const RoundList = () => {
                 to={`/president/create-quiz/shared/${quizCreationData.roundId}/${quizCreationData.annId}`}
                 onClick={closeModal}
                 เขา
-                className="block w-full text-center py-4 bg-secondary hover:bg-primary text-white font-semibold rounded-lg transition"
+                className="block w-full text-center py-3 bg-secondary hover:bg-primary text-white font-semibold rounded-lg transition"
               >
                 Shared Questions
               </Link>
               <Link
                 to={`/president/create-quiz/mix/${quizCreationData.roundId}/${quizCreationData.annId}`}
                 onClick={closeModal}
-                className="block w-full text-center py-4 bg-secondary hover:bg-primary text-white font-semibold rounded-lg transition"
+                className="block w-full text-center py-3 bg-secondary hover:bg-primary text-white font-semibold rounded-lg transition"
               >
-                Mix (AI + Manual)
+                Mix
               </Link>
             </div>
           </div>
