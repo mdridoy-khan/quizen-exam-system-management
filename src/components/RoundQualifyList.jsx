@@ -40,7 +40,7 @@ const RoundQualifyList = ({
 
       try {
         const response = await API.get(
-          `/qzz/round-participant-list/${roundId}/`
+          `/qzz/view-event-participation-list/${roundId}/`
         );
         setParticipate(response.data.results || []);
       } catch (err) {
@@ -62,8 +62,8 @@ const RoundQualifyList = ({
       try {
         const url =
           searchTerm.trim() !== ""
-            ? `/qzz/round-participant-list/${roundId}/?keyword=${searchTerm}`
-            : `/qzz/round-participant-list/${roundId}/`;
+            ? `/qzz/view-event-participation-list/${roundId}/?keyword=${searchTerm}`
+            : `/qzz/view-event-participation-list/${roundId}/`;
         const response = await API.get(url);
         setParticipate(response.data.results || []);
         setCurrentPage(1);
@@ -88,7 +88,7 @@ const RoundQualifyList = ({
     setConfirmError(null);
     try {
       const response = await API.post(
-        `/qzz/select-next-round-participant/${roundId}/`
+        `/qzz/select-next-round-event-participant/${roundId}/`
       );
       setConfirmResult(response.data);
       setConfirmStage(false);
