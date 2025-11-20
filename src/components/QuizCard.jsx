@@ -1,9 +1,13 @@
+import { useMemo, useState } from "react";
 import { GrCertificate } from "react-icons/gr";
 import { IoMdRefresh } from "react-icons/io";
+import { IoShareSocialSharp } from "react-icons/io5";
 import { LuBadgeDollarSign } from "react-icons/lu";
 import { MdOutlineAccessTimeFilled } from "react-icons/md";
 import { Link } from "react-router-dom";
+import SocialShare from "./SocialShare";
 import SwitcherToggleButton from "./SwitcherToggleButton";
+import ToggleQuizOpenCloseModal from "./ToggleQuizOpenCloseModal";
 
 const QuizCard = ({
   id,
@@ -26,14 +30,31 @@ const QuizCard = ({
   termsLink = "/",
   organizer = "Fleek Bangladesh Bd",
   showSwitcher = false,
+  annOpenClose = false,
   winnerList = [],
   subject,
   department_name,
+  activeAnn,
 }) => {
+  const [isShareOpen, setIsShareOpen] = useState(false);
   const isHorizontal = layout === "horizontal";
 
-  console.log("lp_status", lp_status);
-  console.log("closedQuiz", closedQuiz);
+  // console.log("lp_status", lp_status);
+  // console.log("endDate", endDate);
+
+  const domain = window.location.origin;
+
+  // Check if endDate has passed
+  const isExpired = useMemo(() => {
+    try {
+      const quizEnd = new Date(endDate);
+      const now = new Date();
+      return now > quizEnd;
+    } catch (err) {
+      // console.error("Invalid date:", endDate);
+      return false;
+    }
+  }, [endDate]);
 
   return (
     <div
@@ -57,7 +78,7 @@ const QuizCard = ({
           {/* subject and Department name */}
           <div className="px-6 pb-4 flex items-center flex-wrap gap-2">
             <Link
-              to={`/quiz-details/${quizId}`}
+              to={`/announcement-details/${quizId}`}
               state={{ scrollTo: "gratifications" }}
               className="text-sm text-gray-600 border border-gray-300 py-1 px-2 rounded-full"
             >
@@ -65,7 +86,7 @@ const QuizCard = ({
               <span className="font-semibold text-gray-800">{subject}</span>
             </Link>
             <Link
-              to={`/quiz-details/${quizId}`}
+              to={`/announcement-details/${quizId}`}
               state={{ scrollTo: "gratifications" }}
               className="flex items-center gap-1 border border-gray-300 py-1 px-2 rounded-full bg-pink-50"
             >
@@ -80,7 +101,7 @@ const QuizCard = ({
           {/* Organizer and Prize Info */}
           <div className="px-6 pb-4 flex items-center gap-2">
             <Link
-              to={`/quiz-details/${quizId}`}
+              to={`/announcement-details/${quizId}`}
               state={{ scrollTo: "gratifications" }}
               className="text-sm text-gray-600 border border-gray-300 py-1 px-2 rounded-full"
             >
@@ -89,7 +110,7 @@ const QuizCard = ({
             </Link>
             {showCashPrize && (
               <Link
-                to={`/quiz-details/${quizId}`}
+                to={`/announcement-details/${quizId}`}
                 state={{ scrollTo: "gratifications" }}
                 className="flex items-center gap-1 border border-gray-300 py-1 px-2 rounded-full bg-pink-50"
               >
@@ -113,6 +134,11 @@ const QuizCard = ({
                 <SwitcherToggleButton id={id} isActive={isActive} />
               </div>
             )}
+            {annOpenClose && (
+              <div className="absolute top-3 left-3">
+                <ToggleQuizOpenCloseModal id={id} isActive={isActive} />
+              </div>
+            )}
           </div>
 
           {/* Rounds & Duration Info */}
@@ -123,29 +149,46 @@ const QuizCard = ({
               </div>
             </div> */}
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <IoMdRefresh className="text-black" size={20} />
+              <button
+                onClick={() => setIsShareOpen(true)}
+                className="text-black hover:text-primary"
+              >
+                <IoShareSocialSharp className="text-xl" />
+              </button>
+              <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <p className="text-lg font-bold text-gray-800">{rounds}</p>
-                  <p className="text-sm text-gray-500">Rounds</p>
+                  <IoMdRefresh className="text-black" size={20} />
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-bold text-gray-800">{rounds}</p>
+                    <p className="text-sm text-gray-500">Rounds</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <MdOutlineAccessTimeFilled className="text-black" size={24} />
-                <div className="flex items-center gap-2">
-                  <p className="text-lg font-bold text-gray-800">{duration}</p>
-                  <p className="text-sm text-gray-500">Days</p>
+                <div className="flex items-center gap-3">
+                  <MdOutlineAccessTimeFilled className="text-black" size={24} />
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-bold text-gray-800">
+                      {duration}
+                    </p>
+                    <p className="text-sm text-gray-500">Days</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+
+          <SocialShare
+            url={`${domain}/announcement-details/${quizId}`}
+            title=""
+            isOpen={isShareOpen}
+            onClose={() => setIsShareOpen(false)}
+          />
 
           {/* Action Button */}
           <div className="px-6 my-4 border-b border-gray-200">
             {closedQuiz && lp_status === "open" && (
               <button
                 disabled
-                className="w-full text-base font-bold py-2 rounded-lg bg-gray-200 text-gray-500 cursor-not-allowed"
+                className="w-full text-base font-bold rounded-lg leading-10  bg-gray-200 text-gray-500 cursor-not-allowed"
               >
                 {closedQuiz}
               </button>
@@ -153,17 +196,25 @@ const QuizCard = ({
 
             {!closedQuiz && lp_status === "open" && (
               <Link
-                to={`/quiz-details/${quizId}`}
-                className="block w-full mb-4 text-center text-base font-bold text-white py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-md hover:shadow-lg"
+                to={`/announcement-details/${quizId}`}
+                className="block w-full mb-4 text-center text-base leading-10  font-bold text-white rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-md hover:shadow-lg"
               >
                 Register Now
               </Link>
+            )}
+            {activeAnn === "true" && lp_status === "open" && (
+              <button
+                disabled
+                className="block w-full mb-4 text-center text-base leading-10  font-bold text-white rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-md hover:shadow-lg ursor-not-allowed"
+              >
+                Registration Running
+              </button>
             )}
 
             {lp_status === "upcoming" && (
               <button
                 disabled
-                className="w-full text-base font-bold py-2 rounded-lg bg-gray-200 text-gray-500 cursor-not-allowed"
+                className="w-full text-base mb-4 font-bold rounded-lg leading-10  bg-gradient-to-r from-yellow-200 to-orange-200 text-gray-500 cursor-not-allowed"
               >
                 Upcoming
               </button>
@@ -172,16 +223,16 @@ const QuizCard = ({
             {lp_status === "closed" && (
               <button
                 disabled
-                className="w-full text-base mb-4 font-bold py-2 rounded-lg bg-gray-200 text-gray-500 cursor-not-allowed"
+                className="w-full text-base mb-4 font-bold leading-10  rounded-lg bg-gray-200 text-gray-500 cursor-not-allowed"
               >
                 Registration Closed
               </button>
             )}
 
-            {shareQuestion && (
+            {shareQuestion && !isExpired && (
               <button
                 onClick={onButtonClick}
-                className="w-full text-base font-bold text-white py-2 mb-4 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-md hover:shadow-lg"
+                className="w-full text-base font-bold text-white mb-4 leading-10 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-md hover:shadow-lg"
               >
                 {shareQuestion}
               </button>
@@ -217,7 +268,7 @@ const QuizCard = ({
             {showCertificate && (
               <div className="px-6 pb-4">
                 <Link
-                  to={`/quiz-details/${quizId}`}
+                  to={`/announcement-details/${quizId}`}
                   state={{ scrollTo: "gratifications" }}
                   className="flex items-center justify-center gap-2 text-sm text-gray-600 hover:text-primary transition-colors underline"
                 >
@@ -230,7 +281,7 @@ const QuizCard = ({
             {/* Terms Link */}
             <div className="px-6 pb-4">
               <Link
-                to={`/quiz-details/${quizId}`}
+                to={`/announcement-details/${quizId}`}
                 state={{ scrollTo: "terms" }}
                 className="block text-center text-xs text-gray-500 hover:text-primary hover:underline transition underline"
               >
@@ -304,7 +355,7 @@ const QuizCard = ({
 
               {!closedQuiz && lp_status === "open" && (
                 <Link
-                  to={`/quiz-details/${quizId}`}
+                  to={`/announcement-details/${quizId}`}
                   className="text-sm font-semibold border border-red-600 text-red-600 py-1.5 px-4 rounded-lg transition-all duration-300 hover:bg-red-600 hover:text-white hover:shadow-md"
                 >
                   Register Now
@@ -374,7 +425,7 @@ const QuizCard = ({
               <div className="flex items-center gap-3">
                 {showCashPrize && (
                   <Link
-                    to={`/quiz-details/${quizId}`}
+                    to={`/announcement-details/${quizId}`}
                     state={{ scrollTo: "gratifications" }}
                     className="flex items-center gap-1 group"
                   >
@@ -389,7 +440,7 @@ const QuizCard = ({
                 )}
                 {showCertificate && (
                   <Link
-                    to={`/quiz-details/${quizId}`}
+                    to={`/announcement-details/${quizId}`}
                     state={{ scrollTo: "gratifications" }}
                     className="flex items-center gap-1 group"
                   >
@@ -404,7 +455,7 @@ const QuizCard = ({
                 )}
               </div>
               <Link
-                to={`/quiz-details/${quizId}`}
+                to={`/announcement-details/${quizId}`}
                 state={{ scrollTo: "terms" }}
                 className="text-sm text-gray-500 hover:text-red-600 hover:underline transition"
               >
@@ -477,7 +528,7 @@ export default QuizCard;
 //             <SwitcherToggleButton id={id} isActive={isActive} />
 //           </div>
 //         )}
-//         <div className="absolute bottom-0 w-full bg-gradient-to-t from-black600/60 to-transparent text-white px-4 py-2">
+//         <div className="absolute bottom-0 w-full bg-gradient-to-t from-black/60 to-transparent text-white px-4 py-2">
 //           <h4 className="text-lg font-semibold truncate">{title}</h4>
 //         </div>
 //       </div>
@@ -536,7 +587,7 @@ export default QuizCard;
 
 //           {!closedQuiz && lp_status === "open" && (
 //             <Link
-//               to={`/quiz-details/${quizId}`}
+//               to={`/announcement-details/${quizId}`}
 //               className="text-sm font-semibold border border-red600 text-red600 py-1.5 px-4 rounded-lg transition-all duration-300 hover:bg-red600 hover:text-white hover:shadow-md"
 //             >
 //               Register Now
@@ -598,7 +649,7 @@ export default QuizCard;
 //           <div className="flex items-center gap-3">
 //             {showCashPrize && (
 //               <Link
-//                 to={`/quiz-details/${quizId}`}
+//                 to={`/announcement-details/${quizId}`}
 //                 state={{ scrollTo: "gratifications" }}
 //                 className="flex items-center gap-1 group"
 //               >
@@ -613,7 +664,7 @@ export default QuizCard;
 //             )}
 //             {showCertificate && (
 //               <Link
-//                 to={`/quiz-details/${quizId}`}
+//                 to={`/announcement-details/${quizId}`}
 //                 state={{ scrollTo: "gratifications" }}
 //                 className="flex items-center gap-1 group"
 //               >
@@ -628,7 +679,7 @@ export default QuizCard;
 //             )}
 //           </div>
 //           <Link
-//             to={`/quiz-details/${quizId}`}
+//             to={`/announcement-details/${quizId}`}
 //             state={{ scrollTo: "terms" }}
 //             className="text-sm text-gray500 hover:text-red600 hover:underline transition"
 //           >

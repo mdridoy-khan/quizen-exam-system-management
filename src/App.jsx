@@ -119,7 +119,7 @@ function App() {
             element={<RoundCreateForm />}
           />
           <Route
-            path="/president/round-details/:id"
+            path="/president/round-details/:id?"
             element={<RoundDetails />}
           />
           <Route

@@ -1,85 +1,96 @@
 import { useEffect, useState } from "react";
-import { FiEdit } from "react-icons/fi";
-import { GoQuestion } from "react-icons/go";
-import { HiOutlineBookOpen } from "react-icons/hi2";
-import { IoCalendarOutline, IoClose, IoTimeOutline } from "react-icons/io5";
+import { IoClose } from "react-icons/io5";
 import { LuCirclePlus } from "react-icons/lu";
 import { TbListDetails } from "react-icons/tb";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import API from "../../../api/API";
-import QuizCard from "../../../components/QuizCard";
 import RoundQualifyList from "../../../components/RoundQualifyList";
-import { formatDate } from "../../../utils/FormateDate";
-import { formatDateTime } from "../../../utils/FormateDateTime";
 import formatTime from "../../../utils/FormateTime";
-import SingleRoundDetails from ".././SingleRoundDetails";
 
 const RoundList = () => {
   const { id } = useParams();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [announcement, setAnnouncement] = useState(null);
-  const [rounds, setRounds] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState();
-  const [selectedRoundId, setSelectedRoundId] = useState(null);
-  const [modalRoundId, setModalRoundId] = useState(null);
-  const [quizCreationData, setQuizCreationData] = useState(null);
-  const [selectedNextRound, setSelectedNextRound] = useState(null);
+  const location = useLocation();
+  const annId = location.state;
 
-  // Fetch announcement details
+  const [announcement, setAnnouncement] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [quizSet, setQuizSet] = useState([]);
+  const [quizError, setQuizError] = useState(null);
+
+  // Participant List Toggle
+  const [showParticipants, setShowParticipants] = useState(false);
+
+  // Create Quiz Modal
+  const [isOpen, setIsOpen] = useState(false);
+  const [quizCreationData, setQuizCreationData] = useState(null);
+
+  // Fetch Round Details
   useEffect(() => {
-    const fetchAnnouncement = async () => {
+    const fetchRoundDetails = async () => {
       if (!id) return;
       setLoading(true);
+      try {
+        const response = await API.get(`/anc/single-round-details-view/${id}/`);
+        setAnnouncement(response?.data?.data || response?.data);
+      } catch (err) {
+        console.error("Error fetching round details:", err);
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRoundDetails();
+  }, [id]);
+
+  // Fetch Quiz Sets
+  useEffect(() => {
+    const fetchQuizSet = async () => {
+      if (!id || !annId) return;
+
+      setQuizLoading(true);
       try {
         const response = await API.get(
-          `/anc/single-announcement-details/${id}/`
+          `/qzz/view-president-event-quiz-set/anc/${annId}/round/${id}/`
         );
-        setAnnouncement(response?.data?.data);
+
+        let data = response?.data;
+
+        if (data?.data && Array.isArray(data.data)) {
+          data = data.data;
+        } else if (data?.quiz_sets && Array.isArray(data.quiz_sets)) {
+          data = data.quiz_sets;
+        } else if (Array.isArray(data)) {
+          data = data;
+        } else {
+          console.warn("Unexpected quiz set response format:", data);
+          data = [];
+        }
+
+        setQuizSet(data);
       } catch (err) {
-        setError(err);
+        console.error("Error fetching quiz sets:", err);
+        setQuizError(err);
+        setQuizSet([]);
       } finally {
-        setLoading(false);
+        setQuizLoading(false);
       }
     };
-    fetchAnnouncement();
-  }, [id]);
 
-  // Fetch rounds
-  useEffect(() => {
-    const fetchRounds = async () => {
-      if (!id) return;
-      setLoading(true);
-      try {
-        const response = await API.get(`/anc/announcement-round-list/${id}/`);
-        setRounds(response.data.data);
-      } catch (err) {
-        setError(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchRounds();
-  }, [id]);
+    fetchQuizSet();
+  }, [annId, id]);
 
-  const handleOpenModal = (roundID) => {
-    setModalRoundId(roundID);
-    setIsModalOpen(true);
-  };
+  // Toggle Participant List
+  const toggleParticipants = () => setShowParticipants((prev) => !prev);
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setModalRoundId(null);
-  };
-
-  const handleParticipate = (roundId, nextRoundQualifier) => {
-    setSelectedRoundId((prev) => (prev === roundId ? null : roundId));
-    setSelectedNextRound(nextRoundQualifier);
-  };
-
-  const openModal = (roundId, annId) => {
-    setQuizCreationData({ roundId, annId });
+  // Create Quiz Modal
+  const openModal = () => {
+    setQuizCreationData({
+      roundId: id,
+      annId: announcement?.announcement,
+    });
     setIsOpen(true);
   };
 
@@ -88,6 +99,7 @@ const RoundList = () => {
     setQuizCreationData(null);
   };
 
+  // Loading UI
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-3">
@@ -97,175 +109,225 @@ const RoundList = () => {
     );
   }
 
-  if (error) {
+  // Error UI
+  if (error || !announcement) {
     return (
-      <div className="flex items-center justify-center h-64 text-red500 font-bold">
-        Error loading data!
+      <div className="flex items-center justify-center h-64 text-red-500 font-bold">
+        Error loading round details!
       </div>
     );
   }
+
   return (
-    <div>
-      {/* Round step list */}
-      <div className="mb-20">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-xl md:text-2xl 2xl:text-3xl text-black font-semibold">
-            ROUND'S LIST
+    <div className="max-w-5xl mx-auto p-6">
+      {/* Round Header Card */}
+      <div className="bg-white shadow-lg rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="p-6">
+          <h2 className="text-3xl font-bold text-gray-800 mb-6">
+            {announcement.round_name}
           </h2>
-          <Link
-            to={`/president/round-creation-form/${id}`}
-            className="inline-flex items-center text-sm font-bold bg-primary py-2 px-4 rounded gap-2 text-white"
-          >
-            CREATE ROUND <LuCirclePlus size={18} color="#ffffff" />
-          </Link>
-        </div>
 
-        <h3 className="text-base font-bold mb-4">ANNOUNCEMENT INFORMATION</h3>
-        <div className="w-full sm:max-w-3xl">
-          {announcement && (
-            <QuizCard
-              layout="horizontal"
-              image={announcement.announcement_event_image}
-              title={announcement.announcement_name}
-              startDate={formatDate(announcement.registration_start_date)}
-              endDate={formatDate(announcement.registration_end_date)}
-              rounds={announcement.round_number}
-              duration={announcement.total_days}
-              registrationText={announcement.is_reg_open}
-              showCashPrize={announcement.is_pricemoney}
-              showCertificate={announcement.is_certificate}
-              termsLink="/terms-and-conditions"
-              organizer={announcement.organizer_name}
-            />
-          )}
-        </div>
-
-        <h3 className="text-lg lg:text-xl xl:text-2xl font-bold mt-16 mb-4">
-          TOTAL ROUND {rounds.length}
-        </h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 relative">
-          {rounds.map((round, index) => (
-            <div key={round.id}>
-              <div className="bg-white shadow rounded-xl p-4">
-                <button
-                  onClick={() => handleOpenModal(round.id)}
-                  className="w-full flex justify-end mb-4"
-                >
-                  <FiEdit
-                    size={20}
-                    className="transition hover:text-indigo-500"
-                  />
-                </button>
-                <div className="flex items-center justify-between gap-4 flex-col sm:flex-row mb-4">
-                  <p className="text-lg font-semibold text-black">
-                    {round.round_name}
-                  </p>
-                  <h4 className="text-xs py-1 px-2 rounded-full bg-indigo-200 text-indigo-500 font-semibold">
-                    Round {index + 1}
-                  </h4>
-                </div>
-                <ul className="flex flex-col space-y-1 text-sm font-medium">
-                  <li className="flex items-center gap-2">
-                    <IoCalendarOutline size={18} />
-                    {formatDateTime(round.quiz_start_date)} to{" "}
-                    {formatDateTime(round.quiz_end_date)}
-                  </li>
-                  <li className="flex items-center gap-1">
-                    <IoTimeOutline size={20} />
-                    Duration: {formatTime(round.duration)}
-                  </li>
-                  <li className="flex items-center gap-1">
-                    <GoQuestion size={18} />
-                    Total Questions: {round.total_questions}
-                  </li>
-                  <li className="flex items-center gap-1">
-                    <HiOutlineBookOpen size={18} />
-                    Subject: {round.topic_subject}
-                  </li>
-                </ul>
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                  <button
-                    className="self-start flex items-center justify-center gap-2 transition bg-secondary hover:bg-primary rounded-lg py-2 px-1 text-white text-[12px] sm:text-sm font-semibold"
-                    onClick={() =>
-                      handleParticipate(round.id, round.next_round_qualifier)
-                    }
-                  >
-                    VIEW PARTICIPANT <TbListDetails size={20} />
-                  </button>
-                  <button
-                    onClick={() =>
-                      openModal(round.id, id || round.announcement)
-                    }
-                    className="self-start flex items-center justify-center gap-2 transition bg-secondary hover:bg-primary rounded-lg py-2 px-1 text-white text-[12px] sm:text-sm font-semibold"
-                  >
-                    CREATE QUIZ <LuCirclePlus size={20} />
-                  </button>
-                </div>
-              </div>
+          {/* Study Material */}
+          {announcement.study_material && (
+            <div className="mb-6">
+              <img
+                src={announcement.study_material}
+                alt="Study Material"
+                className="w-full h-72 object-cover rounded-xl shadow-md"
+              />
             </div>
-          ))}
-        </div>
-        {selectedRoundId && selectedNextRound && (
-          <div className="mt-10">
-            <RoundQualifyList
-              roundId={selectedRoundId}
-              nextRoundQualifier={selectedNextRound}
-            />
+          )}
+
+          {/* Details Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+            {[
+              { label: "Announcement", value: announcement.announcement_name },
+              { label: "Department", value: announcement.department },
+              { label: "Topic / Subject", value: announcement.topic_subject },
+              {
+                label: "Question Type",
+                value: announcement.question_type?.toUpperCase(),
+              },
+              {
+                label: "Start Date & Time",
+                value: new Date(announcement.quiz_start_date).toLocaleString(),
+              },
+              {
+                label: "End Date & Time",
+                value: new Date(announcement.quiz_end_date).toLocaleString(),
+              },
+              { label: "Total Questions", value: announcement.total_questions },
+              {
+                label: "Duration (min)",
+                value: formatTime(announcement.duration),
+              },
+            ].map((item, idx) => (
+              <div key={idx} className="bg-gray-50 p-4 rounded-xl">
+                <p className="text-sm text-gray-500">{item.label}</p>
+                <p className="font-semibold text-gray-800">{item.value}</p>
+              </div>
+            ))}
           </div>
-        )}
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center justify-center gap-6">
+            <button
+              onClick={toggleParticipants}
+              className={`flex items-center justify-center gap-3 py-3 px-8 text-white font-semibold rounded-lg transition ${
+                showParticipants
+                  ? "bg-primary"
+                  : "bg-secondary hover:bg-primary"
+              }`}
+            >
+              VIEW PARTICIPANTS <TbListDetails className="text-xl" />
+            </button>
+
+            <div className="relative group">
+              <button
+                onClick={openModal}
+                disabled={announcement.is_created_quiz}
+                className={`flex items-center justify-center gap-3 py-3 px-8 text-white font-semibold rounded-lg transition ${
+                  announcement.is_created_quiz
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-secondary hover:bg-primary"
+                }`}
+              >
+                CREATE QUIZ <LuCirclePlus className="text-xl" />
+              </button>
+              {announcement.is_created_quiz && (
+                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-xs font-medium bg-black text-white rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-10">
+                  1 Question set already submitted
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black600 bg-opacity-50">
-          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [-webkit-scrollbar]:hidden">
-            <SingleRoundDetails
-              onClose={handleCloseModal}
-              roundID={modalRoundId}
-              id={id}
+      {/* ==================== QUIZ SET LIST ==================== */}
+      {quizLoading ? (
+        <div className="mt-10 text-center text-gray-600">
+          Loading quiz sets...
+        </div>
+      ) : quizSet.length > 0 ? (
+        <div className="mt-10 bg-white shadow-md border border-gray-200 rounded-2xl p-6">
+          <h3 className="text-2xl font-bold text-gray-800 mb-6">
+            Quiz Sets for {announcement.round_name}
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {quizSet.map((item) => (
+              <div
+                key={item.id}
+                className="bg-gray-50 border rounded-xl p-5 shadow-sm hover:shadow-lg transition-all"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <h4 className="text-lg font-semibold text-gray-800">
+                    {item.subject || "Untitled Quiz Set"}
+                  </h4>
+                  <span className="text-xs px-2 py-1 bg-primary text-white rounded">
+                    ID: {item.id}
+                  </span>
+                </div>
+
+                <div className="space-y-2 text-sm text-gray-700">
+                  <div className="flex justify-between">
+                    <span>Total Questions</span>
+                    <span className="font-bold">{item.total_questions}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Total Marks</span>
+                    <span className="font-bold">{item.total_marks}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Marks per Question</span>
+                    <span className="font-bold">{item.marks_per_question}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Negative Mark</span>
+                    <span className="font-bold">
+                      {item.negative_marks_per_question || 0}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-5">
+                  <Link
+                    to={`/president/quiz-set/details/${item.id}`}
+                    className="block text-center py-2.5 bg-secondary hover:bg-primary text-white font-semibold rounded-lg transition"
+                  >
+                    View Details
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : quizError ? (
+        <div className="mt-10 text-center text-red-600">
+          Failed to load quiz sets.
+        </div>
+      ) : (
+        <div className="mt-10 text-center text-gray-500 italic">
+          No quiz set created yet for this round.
+        </div>
+      )}
+
+      {/* Participant List */}
+      {showParticipants && (
+        <div className="mt-10 bg-gray-50 rounded-2xl border">
+          <div className="p-6">
+            <h3 className="text-xl font-bold text-gray-800 mb-6">
+              Participants & Qualifiers – {announcement.round_name}
+            </h3>
+            <RoundQualifyList
+              roundId={id}
+              nextRoundQualifier={announcement.next_round_qualifier}
+              topicSubject={announcement.topic_subject}
+              confirmNextRound={announcement.is_next_round_confirmed}
+              roundName={announcement.round_name}
             />
           </div>
         </div>
       )}
 
-      {/* Question making alert modal */}
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black600 bg-opacity-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6 relative">
-            <div className="flex items-center justify-end">
-              <button
-                onClick={closeModal}
-                className="text-gray500 hover:text-gray700 transition-colors mb-2"
-              >
-                <IoClose size={24} />
-              </button>
-            </div>
+      {/* Create Quiz Modal */}
+      {isOpen && quizCreationData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-8 relative">
+            <button
+              onClick={closeModal}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition"
+            >
+              <IoClose size={28} />
+            </button>
 
-            <h2 className="text-2xl font-semibold text-gray800 mb-6 text-center">
+            <h2 className="text-2xl font-bold text-center mb-8">
               Choose a method to create your quiz
             </h2>
 
-            <div className="flex flex-col gap-4">
+            <div className="space-y-4">
               <Link
-                to={`/president/create-quiz/ai/${quizCreationData?.roundId}/${quizCreationData?.annId}`}
-                className="w-full text-base font-semibold flex items-center justify-center py-3 bg-secondary text-white rounded-lg hover:bg-primary transition-colors focus:outline-none"
+                to={`/president/create-quiz/ai/${quizCreationData.roundId}/${quizCreationData.annId}`}
                 onClick={closeModal}
+                className="block w-full text-center py-4 bg-secondary hover:bg-primary text-white font-semibold rounded-lg transition"
               >
-                AI
+                AI Generated
               </Link>
               <Link
-                to={`/president/create-quiz/shared/${quizCreationData?.roundId}/${quizCreationData?.annId}`}
-                className="w-full text-base font-semibold flex items-center justify-center py-3 bg-secondary text-white rounded-lg hover:bg-primary transition-colors focus:outline-none"
+                to={`/president/create-quiz/shared/${quizCreationData.roundId}/${quizCreationData.annId}`}
                 onClick={closeModal}
+                เขา
+                className="block w-full text-center py-4 bg-secondary hover:bg-primary text-white font-semibold rounded-lg transition"
               >
-                Shared Question
+                Shared Questions
               </Link>
               <Link
-                to={`/president/create-quiz/mix/${quizCreationData?.roundId}/${quizCreationData?.annId}`}
-                className="w-full text-base font-semibold flex items-center justify-center py-3 bg-secondary text-white rounded-lg hover:bg-primary transition-colors focus:outline-none"
+                to={`/president/create-quiz/mix/${quizCreationData.roundId}/${quizCreationData.annId}`}
                 onClick={closeModal}
+                className="block w-full text-center py-4 bg-secondary hover:bg-primary text-white font-semibold rounded-lg transition"
               >
-                Mix
+                Mix (AI + Manual)
               </Link>
             </div>
           </div>
@@ -276,3 +338,349 @@ const RoundList = () => {
 };
 
 export default RoundList;
+
+// import { useEffect, useState } from "react";
+// import { IoClose } from "react-icons/io5";
+// import { LuCirclePlus } from "react-icons/lu";
+// import { TbListDetails } from "react-icons/tb";
+// import { Link, useLocation, useParams } from "react-router-dom";
+// import API from "../../../api/API";
+// import RoundQualifyList from "../../../components/RoundQualifyList";
+// import formatTime from "../../../utils/FormateTime";
+
+// const RoundList = () => {
+//   const { id } = useParams();
+//   const [announcement, setAnnouncement] = useState(null);
+//   const [loading, setLoading] = useState(false);
+//   const [error, setError] = useState(null);
+//   const [quizLoading, setQuizLoading] = useState(false);
+//   const [quizSet, setQuizSet] = useState(null);
+//   const [quizError, setQuizError] = useState(null);
+
+//   // Participant List
+//   const [showParticipants, setShowParticipants] = useState(false);
+
+//   // Create Quiz Modal
+//   const [isOpen, setIsOpen] = useState(false);
+//   const [quizCreationData, setQuizCreationData] = useState(null);
+
+//   const location = useLocation();
+//   const annId = location.state;
+//   console.log("annId", annId);
+
+//   // fetch round details
+//   useEffect(() => {
+//     const fetchRoundDetails = async () => {
+//       if (!id) return;
+//       setLoading(true);
+//       try {
+//         const response = await API.get(`/anc/single-round-details-view/${id}/`);
+//         setAnnouncement(response?.data?.data);
+//       } catch (err) {
+//         setError(err);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+//     fetchRoundDetails();
+//   }, [id]);
+
+//   // fetch quiz set
+//   useEffect(() => {
+//     const fetchQuizSet = async () => {
+//       if (!id) return;
+//       setQuizLoading(true);
+//       try {
+//         const response = await API.get(
+//           `/qzz/view-president-event-quiz-set/anc/${annId}/round/${id}/`
+//         );
+//         console.log("Quiz Set", response?.data);
+//         setQuizSet(response?.data);
+//       } catch (err) {
+//         setQuizError(err);
+//       } finally {
+//         setQuizLoading(false);
+//       }
+//     };
+//     fetchQuizSet();
+//   }, [annId, id]);
+
+//   // Toggle Participant List
+//   const toggleParticipants = () => {
+//     setShowParticipants((prev) => !prev);
+//   };
+
+//   // Create Quiz Modal
+//   const openModal = () => {
+//     setQuizCreationData({
+//       roundId: id,
+//       annId: announcement?.announcement,
+//     });
+//     setIsOpen(true);
+//   };
+
+//   const closeModal = () => {
+//     setIsOpen(false);
+//     setQuizCreationData(null);
+//   };
+
+//   if (loading) {
+//     return (
+//       <div className="flex flex-col items-center justify-center h-64 space-y-3">
+//         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+//         <p className="text-base font-semibold text-gray-700">Loading...</p>
+//       </div>
+//     );
+//   }
+
+//   if (error || !announcement) {
+//     return (
+//       <div className="flex items-center justify-center h-64 text-red-500 font-bold">
+//         Error loading round details!
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="max-w-5xl mx-auto p-6">
+//       <div className="bg-white shadow-lg rounded-2xl border border-gray-100 overflow-hidden">
+//         {/* Round Header */}
+//         <div className="p-6">
+//           <h2 className="text-3xl font-bold text-gray-800 mb-6">
+//             {announcement.round_name}
+//           </h2>
+
+//           {/* Study Material */}
+//           {announcement.study_material && (
+//             <div className="mb-6">
+//               <img
+//                 src={announcement.study_material}
+//                 alt="Study Material"
+//                 className="w-full h-72 object-cover rounded-xl shadow-md"
+//               />
+//             </div>
+//           )}
+
+//           {/* Details Grid */}
+//           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+//             <div className="bg-gray-50 p-4 rounded-xl">
+//               <p className="text-sm text-gray-500">Announcement</p>
+//               <p className="font-semibold text-gray-800">
+//                 {announcement.announcement_name}
+//               </p>
+//             </div>
+//             <div className="bg-gray-50 p-4 rounded-xl">
+//               <p className="text-sm text-gray-500">Department</p>
+//               <p className="font-semibold text-gray-800">
+//                 {announcement.department}
+//               </p>
+//             </div>
+//             <div className="bg-gray-50 p-4 rounded-xl">
+//               <p className="text-sm text-gray-500">Topic / Subject</p>
+//               <p className="font-semibold text-gray-800">
+//                 {announcement.topic_subject}
+//               </p>
+//             </div>
+//             <div className="bg-gray-50 p-4 rounded-xl">
+//               <p className="text-sm text-gray-500">Question Type</p>
+//               <p className="font-semibold uppercase">
+//                 {announcement.question_type}
+//               </p>
+//             </div>
+//             <div className="bg-gray-50 p-4 rounded-xl">
+//               <p className="text-sm text-gray-500">Start Date & Time</p>
+//               <p className="font-semibold">
+//                 {new Date(announcement.quiz_start_date).toLocaleString()}
+//               </p>
+//             </div>
+//             <div className="bg-gray-50 p-4 rounded-xl">
+//               <p className="text-sm text-gray-500">End Date & Time</p>
+//               <p className="font-semibold">
+//                 {new Date(announcement.quiz_end_date).toLocaleString()}
+//               </p>
+//             </div>
+//             <div className="bg-gray-50 p-4 rounded-xl">
+//               <p className="text-sm text-gray-500">Total Questions</p>
+//               <p className="font-semibold">{announcement.total_questions}</p>
+//             </div>
+//             <div className="bg-gray-50 p-4 rounded-xl">
+//               <p className="text-sm text-gray-500">Duration (min)</p>
+//               <p className="font-semibold text-sm">
+//                 {formatTime(announcement.duration)}
+//               </p>
+//             </div>
+//           </div>
+
+//           {/* Buttons */}
+//           <div className="flex items-center justify-between gap-4">
+//             {/* VIEW PARTICIPANT Button - Toggle */}
+//             <button
+//               onClick={toggleParticipants}
+//               className={`w-full max-w-xs flex items-center justify-center gap-3 py-3 px-6 text-white font-semibold rounded-lg transition
+//                 ${
+//                   showParticipants
+//                     ? "bg-primary"
+//                     : "bg-secondary hover:bg-primary"
+//                 }`}
+//             >
+//               VIEW PARTICIPANT <TbListDetails className="text-xl" />
+//             </button>
+
+//             {/* CREATE QUIZ Button */}
+//             <div className="relative group">
+//               <button
+//                 onClick={openModal}
+//                 disabled={announcement.is_created_quiz}
+//                 className={`flex items-center justify-center gap-3 py-3 px-6 text-white font-semibold rounded-lg transition
+//                   ${
+//                     announcement.is_created_quiz
+//                       ? "bg-gray-400 cursor-not-allowed"
+//                       : "bg-secondary hover:bg-primary"
+//                   }`}
+//               >
+//                 CREATE QUIZ <LuCirclePlus className="text-xl" />
+//               </button>
+
+//               {announcement.is_created_quiz && (
+//                 <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-xs font-medium bg-black text-white rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-10">
+//                   1 Question set already submitted
+//                 </span>
+//               )}
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* QUIZ SET LIST */}
+//       {quizSet?.length > 0 && (
+//         <div className="mt-10 bg-white shadow-md border border-gray-200 rounded-2xl p-6">
+//           <h3 className="text-xl font-bold text-gray-800 mb-6">
+//             Quiz Sets for {announcement.round_name}
+//           </h3>
+
+//           {quizLoading ? (
+//             <p className="text-gray-600 text-center">Loading quiz sets...</p>
+//           ) : (
+//             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+//               {quizSet.map((item) => (
+//                 <div
+//                   key={item.id}
+//                   className="bg-gray-50 border rounded-xl p-5 shadow-sm hover:shadow-md transition-all"
+//                 >
+//                   <div className="flex justify-between items-center mb-3">
+//                     <h4 className="text-lg font-semibold text-gray-800">
+//                       {item.subject || "No Subject"}
+//                     </h4>
+//                     <span className="text-sm px-2 py-1 bg-primary text-white rounded-md">
+//                       ID: {item.id}
+//                     </span>
+//                   </div>
+
+//                   <div className="space-y-2 text-sm">
+//                     <p className="flex justify-between">
+//                       <span className="text-gray-600">Total Questions:</span>
+//                       <span className="font-semibold">
+//                         {item.total_questions}
+//                       </span>
+//                     </p>
+
+//                     <p className="flex justify-between">
+//                       <span className="text-gray-600">Total Marks:</span>
+//                       <span className="font-semibold">{item.total_marks}</span>
+//                     </p>
+
+//                     <p className="flex justify-between">
+//                       <span className="text-gray-600">Marks per Question:</span>
+//                       <span className="font-semibold">
+//                         {item.marks_per_question}
+//                       </span>
+//                     </p>
+
+//                     <p className="flex justify-between">
+//                       <span className="text-gray-600">Negative Mark:</span>
+//                       <span className="font-semibold">
+//                         {item.negative_marks_per_question}
+//                       </span>
+//                     </p>
+//                   </div>
+
+//                   {/* Button */}
+//                   <div className="mt-4">
+//                     <Link
+//                       to={`/president/quiz-set/details/${item.id}`}
+//                       className="block text-center py-2 bg-secondary hover:bg-primary text-white font-semibold rounded-lg transition"
+//                     >
+//                       View Details
+//                     </Link>
+//                   </div>
+//                 </div>
+//               ))}
+//             </div>
+//           )}
+//         </div>
+//       )}
+
+//       {/* Participant List - Conditional Render */}
+//       {showParticipants && (
+//         <div className="border-t border-gray-200 bg-gray-50 mt-10">
+//           <div className="p-6">
+//             <h3 className="text-xl font-bold text-gray-800 mb-6">
+//               Participants & Qualifiers for {announcement.round_name}
+//             </h3>
+//             <RoundQualifyList
+//               roundId={id}
+//               nextRoundQualifier={announcement.next_round_qualifier}
+//               topicSubject={announcement.topic_subject}
+//               confirmNextRound={announcement.is_next_round_confirmed}
+//               roundName={announcement.round_name}
+//             />
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Create Quiz Modal - Same as AllRoundList */}
+//       {isOpen && quizCreationData && (
+//         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+//           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-8 relative">
+//             <button
+//               onClick={closeModal}
+//               className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+//             >
+//               <IoClose size={28} />
+//             </button>
+
+//             <h2 className="text-2xl font-bold text-center mb-8">
+//               Choose a method to create your quiz
+//             </h2>
+
+//             <div className="space-y-4">
+//               <Link
+//                 to={`/president/create-quiz/ai/${quizCreationData.roundId}/${quizCreationData.annId}`}
+//                 onClick={closeModal}
+//                 className="block w-full text-center py-4 bg-secondary hover:bg-primary text-white font-semibold rounded-lg transition"
+//               >
+//                 AI Generated
+//               </Link>
+//               <Link
+//                 to={`/president/create-quiz/shared/${quizCreationData.roundId}/${quizCreationData.annId}`}
+//                 onClick={closeModal}
+//                 className="block w-full text-center py-4 bg-secondary hover:bg-primary text-white font-semibold rounded-lg transition"
+//               >
+//                 Shared Questions
+//               </Link>
+//               <Link
+//                 to={`/president/create-quiz/mix/${quizCreationData.roundId}/${quizCreationData.annId}`}
+//                 onClick={closeModal}
+//                 className="block w-full text-center py-4 bg-secondary hover:bg-primary text-white font-semibold rounded-lg transition"
+//               >
+//                 Mix (AI + Manual)
+//               </Link>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// };
+
+// export default RoundList;

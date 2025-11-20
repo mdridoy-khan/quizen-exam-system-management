@@ -1,14 +1,15 @@
 import { format, parseISO } from "date-fns";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { FaRegCalendarAlt } from "react-icons/fa";
+import { FaRegCalendarAlt, FaSpinner } from "react-icons/fa";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import API from "../../../api/API";
 import UploadIcon from "../../../assets/icons/upload.svg";
 import QuizCard from "../../../components/QuizCard";
+import { FormHandleEnterKey } from "../../../utils/FormHandleEnterKey";
 
-const RoundCreateForm = () => {
+const RoundCreationForm = () => {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const roundID = searchParams.get("round_id");
@@ -17,21 +18,25 @@ const RoundCreateForm = () => {
   const [announcement, setAnnouncement] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const datePickerRef = useRef(null);
+  const datePickerRefEnd = useRef(null);
 
   const navigate = useNavigate();
 
+  // form initial value assign
   const [formData, setFormData] = useState({
     round_name: "",
-    // department: "",
-    topic_subject: "",
+    department: "",
+    // topic_subject: "",
     duration: "",
     quiz_start_date: null,
     quiz_end_date: null,
-    // question_type: "",
-    // total_questions: "",
-    // marks_per_question: "",
-    // negative_marks_per_question: "",
+    question_type: "",
+    total_questions: "",
+    marks_per_question: "",
+    negative_marks_per_question: "",
     next_round_qualifier: "",
     exam_type: "",
     address: "",
@@ -64,8 +69,8 @@ const RoundCreateForm = () => {
         if (round) {
           setFormData({
             round_name: round.round_name || "",
-            // department: round.department || "",
-            topic_subject: round.topic_subject || "",
+            department: round.department || "",
+            // topic_subject: round.topic_subject || "",
             duration: round.duration || "",
             quiz_start_date: round.quiz_start_date
               ? new Date(round.quiz_start_date)
@@ -73,11 +78,10 @@ const RoundCreateForm = () => {
             quiz_end_date: round.quiz_end_date
               ? new Date(round.quiz_end_date)
               : null,
-            // question_type: round.question_type || "",
-            // total_questions: round.total_questions || "",
-            // marks_per_question: round.marks_per_question || "",
-            // negative_marks_per_question:
-            //   round.negative_marks_per_question || "",
+            question_type: round.question_type || "",
+            total_questions: round.total_questions || "",
+            marks_per_question: round.marks_per_question || "",
+            negative_marks_per_question: round.negative_marks_per_question || 0,
             next_round_qualifier: round.next_round_qualifier || "",
             exam_type: round.exam_type || "",
             address: round.address || "",
@@ -133,6 +137,7 @@ const RoundCreateForm = () => {
     });
   };
 
+  // handle end date change
   const handleEndDateChange = (date) => {
     setFormData((prev) => {
       const newData = { ...prev, quiz_end_date: date };
@@ -146,6 +151,7 @@ const RoundCreateForm = () => {
     });
   };
 
+  // duration time
   const getDurationText = (minutes) => {
     if (!minutes) return "";
     return minutes >= 60
@@ -164,7 +170,7 @@ const RoundCreateForm = () => {
   // Form submit
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setSubmitLoading(true);
     setSubmitError(null);
     try {
       const payload = new FormData();
@@ -183,7 +189,6 @@ const RoundCreateForm = () => {
       }
 
       if (roundID) {
-        // Update existing round (PUT)
         await API.put(
           `/anc/announcement/${id}/round/${roundID}/edit/`,
           payload,
@@ -192,443 +197,33 @@ const RoundCreateForm = () => {
           }
         );
       } else {
-        // Create new round (POST)
         await API.post(`/anc/create-round/${id}/`, payload, {
           headers: { "Content-Type": "multipart/form-data" },
         });
       }
 
-      navigate(`/president/rounds/${id}/`);
+      navigate(`/president/all-rounds/${id}/`);
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.message;
-      if (errorMessage.includes("Disk quota exceeded")) {
-        setSubmitError(
-          "Cannot save the file due to insufficient server storage. Please try a smaller file or contact the administrator."
-        );
-      } else {
-        setSubmitError("Failed to save round details. Please try again.");
-      }
+      const errorMessage = err.response?.data?.error;
+      setSubmitError(
+        errorMessage || "Failed to save round details. Please try again."
+      );
     } finally {
-      setLoading(false);
+      setSubmitLoading(false);
     }
   };
 
   return (
-    // <div className="bg-white p-12 shadow mx-auto max-w-7xl grid grid-cols-1 md:grid-cols-[60%_40%] gap-4 rounded-xl">
-    //   {/* Round Form */}
-    //   <div className="bg-white p-8 shadow max-w-2xl rounded-lg">
-    //     <h3 className="text-center text-2xl font-semibold mb-10">
-    //       Round Creation Form
-    //     </h3>
-    //     {error && (
-    //       <div className="mb-4 p-4 bg-red100 text-red700 rounded-md">
-    //         {error}
-    //       </div>
-    //     )}
-    //     {submitError && (
-    //       <div className="mb-4 p-4 bg-red100 text-red700 rounded-md">
-    //         {submitError}
-    //       </div>
-    //     )}
-    //     {loading ? (
-    //       <div className="flex justify-center items-center h-64">
-    //         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-    //       </div>
-    //     ) : (
-    //       <form className="space-y-2" onSubmit={handleFormSubmit}>
-    //         {/* Round Name */}
-    //         <div className="input-wrapper">
-    //           <label
-    //             htmlFor="round_name"
-    //             className="text-sm font-medium text-black600 mb-1 block"
-    //           >
-    //             Round Name
-    //             <span className="text-sm text-red500 ml-1">*</span>
-    //           </label>
-    //           <input
-    //             type="text"
-    //             id="round_name"
-    //             value={formData.round_name}
-    //             onChange={handleChange}
-    //             placeholder="Enter Round Name"
-    //             className="w-full border border-gray300 p-2 rounded-md outline-none focus:border-primary"
-    //             disabled={loading}
-    //           />
-    //         </div>
-
-    //         {/* Department */}
-    //         <div className="input-wrapper">
-    //           <label
-    //             htmlFor="department"
-    //             className="text-sm font-medium text-black600 mb-1 block"
-    //           >
-    //             Department
-    //             <span className="text-sm text-red500 ml-1">*</span>
-    //           </label>
-    //           <input
-    //             type="text"
-    //             id="department"
-    //             value={formData.department}
-    //             onChange={handleChange}
-    //             placeholder="Enter Department"
-    //             className="w-full border border-gray300 p-2 rounded-md outline-none focus:border-primary"
-    //             disabled={loading}
-    //           />
-    //         </div>
-
-    //         {/* Topic Subject */}
-    //         <div className="input-wrapper">
-    //           <label
-    //             htmlFor="topic_subject"
-    //             className="text-sm font-medium text-black600 mb-1 block"
-    //           >
-    //             Topic Subject
-    //             <span className="text-sm text-red500 ml-1">*</span>
-    //           </label>
-    //           <input
-    //             type="text"
-    //             id="topic_subject"
-    //             value={formData.topic_subject}
-    //             onChange={handleChange}
-    //             placeholder="Enter Topic Subject"
-    //             className="w-full border border-gray300 p-2 rounded-md outline-none focus:border-primary"
-    //             disabled={loading}
-    //           />
-    //         </div>
-
-    //         {/* Quiz Dates & Duration */}
-    //         <div className="grid grid-cols-[80%_20%] gap-2">
-    //           <div className="grid grid-cols-2 gap-2">
-    //             <div className="input-wrapper relative">
-    //               <label
-    //                 htmlFor="quiz_start_date"
-    //                 className="text-sm font-medium text-black600 mb-1 block"
-    //               >
-    //                 Quiz Start Date
-    //                 <span className="text-sm text-red500 ml-1">*</span>
-    //               </label>
-    //               <div className="relative date_time">
-    //                 <DatePicker
-    //                   selected={formData.quiz_start_date}
-    //                   onChange={handleStartDateChange}
-    //                   placeholderText="Quiz Start Date"
-    //                   timeInputLabel="Time:"
-    //                   dateFormat="MM/dd/yyyy h:mm aa"
-    //                   showTimeInput
-    //                   className="w-full border border-gray300 p-2 rounded-md pr-10 outline-none focus:border-primary"
-    //                   disabled={loading}
-    //                 />
-    //                 <FaRegCalendarAlt className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray500" />
-    //               </div>
-    //             </div>
-    //             <div className="input-wrapper relative">
-    //               <label
-    //                 htmlFor="quiz_end_date"
-    //                 className="text-sm font-medium text-black600 mb-1 block"
-    //               >
-    //                 Quiz End Date
-    //                 <span className="text-sm text-red500 ml-1">*</span>
-    //               </label>
-    //               <div className="relative date_time">
-    //                 <DatePicker
-    //                   selected={formData.quiz_end_date}
-    //                   onChange={handleEndDateChange}
-    //                   placeholderText="Quiz End Date"
-    //                   timeInputLabel="Time:"
-    //                   dateFormat="MM/dd/yyyy h:mm aa"
-    //                   showTimeInput
-    //                   className="w-full border border-gray300 p-2 rounded-md pr-10 outline-none focus:border-primary"
-    //                   disabled={loading}
-    //                 />
-    //                 <FaRegCalendarAlt className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray500" />
-    //               </div>
-    //             </div>
-    //           </div>
-    //           <div className="input-wrapper">
-    //             <label
-    //               htmlFor="duration"
-    //               className="text-sm font-medium text-black600 mb-1 block"
-    //             >
-    //               Duration
-    //               <span className="text-sm text-red500 ml-1">*</span>
-    //             </label>
-    //             <input
-    //               type="text"
-    //               id="duration"
-    //               value={getDurationText(formData.duration)}
-    //               readOnly
-    //               placeholder="Duration will be calculated"
-    //               className="w-full border border-gray300 p-2 rounded-md outline-none focus:border-primary bg-gray100 cursor-not-allowed"
-    //               disabled
-    //             />
-    //           </div>
-    //         </div>
-
-    //         {/* Total Questions, Marks, Negative Marks */}
-    //         <div className="grid grid-cols-2 xl:grid-cols-3 gap-2">
-    //           <div className="input-wrapper">
-    //             <label
-    //               htmlFor="total_questions"
-    //               className="text-sm font-medium text-black600 mb-1 block"
-    //             >
-    //               Total Questions
-    //               <span className="text-sm text-red500 ml-1">*</span>
-    //             </label>
-    //             <input
-    //               type="number"
-    //               id="total_questions"
-    //               value={formData.total_questions}
-    //               onChange={handleChange}
-    //               placeholder="Enter Total Questions"
-    //               className="w-full border border-gray300 p-2 rounded-md outline-none focus:border-primary"
-    //               disabled={loading}
-    //             />
-    //           </div>
-
-    //           <div className="input-wrapper">
-    //             <label
-    //               htmlFor="marks_per_question"
-    //               className="text-sm font-medium text-black600 mb-1 block"
-    //             >
-    //               Marks/Question
-    //               <span className="text-sm text-red500 ml-1">*</span>
-    //             </label>
-    //             <input
-    //               type="number"
-    //               id="marks_per_question"
-    //               value={formData.marks_per_question}
-    //               onChange={handleChange}
-    //               placeholder="Enter Marks per Question"
-    //               className="w-full border border-gray300 p-2 rounded-md outline-none focus:border-primary"
-    //               disabled={loading}
-    //             />
-    //           </div>
-
-    //           <div className="input-wrapper">
-    //             <label
-    //               htmlFor="negative_marks_per_question"
-    //               className="text-sm font-medium text-black600 mb-1 block"
-    //             >
-    //               Negative Marks/Question
-    //             </label>
-    //             <input
-    //               type="number"
-    //               id="negative_marks_per_question"
-    //               value={formData.negative_marks_per_question}
-    //               onChange={handleChange}
-    //               placeholder="Enter Negative Marks"
-    //               className="w-full border border-gray300 p-2 rounded-md outline-none focus:border-primary"
-    //               disabled={loading}
-    //             />
-    //           </div>
-    //         </div>
-
-    //         {/* Question Type & Exam Type */}
-    //         <div className="grid grid-cols-2 gap-2">
-    //           <div className="input-wrapper">
-    //             <label
-    //               htmlFor="question_type"
-    //               className="text-sm font-medium text-black600 mb-1 block"
-    //             >
-    //               Question Type
-    //               <span className="text-sm text-red500 ml-1">*</span>
-    //             </label>
-    //             <select
-    //               id="question_type"
-    //               value={formData.question_type}
-    //               onChange={handleChange}
-    //               className="w-full border border-gray300 p-2 rounded-md outline-none focus:border-primary"
-    //               disabled={loading}
-    //             >
-    //               <option value="">Select Question Type</option>
-    //               <option value="mcq">MCQ</option>
-    //             </select>
-    //           </div>
-
-    //           <div className="input-wrapper">
-    //             <label
-    //               htmlFor="exam_type"
-    //               className="text-sm font-medium text-black600 mb-1 block"
-    //             >
-    //               Exam Type
-    //               <span className="text-sm text-red500 ml-1">*</span>
-    //             </label>
-    //             <select
-    //               id="exam_type"
-    //               value={formData.exam_type}
-    //               onChange={handleChange}
-    //               className="w-full border border-gray300 p-2 rounded-md outline-none focus:border-primary"
-    //               disabled={loading}
-    //             >
-    //               <option value="">Select Exam Type</option>
-    //               <option value="online">Online</option>
-    //               <option value="offline">Offline</option>
-    //               <option value="mix">Mix</option>
-    //             </select>
-    //           </div>
-    //         </div>
-
-    //         {/* Next Round Qualifier */}
-    //         <div className="input-wrapper">
-    //           <label
-    //             htmlFor="next_round_qualifier"
-    //             className="text-sm font-medium text-black600 mb-1 block"
-    //           >
-    //             Next Round Qualifier
-    //             <span className="text-sm text-red500 ml-1">*</span>
-    //           </label>
-    //           <input
-    //             type="number"
-    //             id="next_round_qualifier"
-    //             value={formData.next_round_qualifier}
-    //             onChange={handleChange}
-    //             placeholder="Enter Next Round Qualifier"
-    //             className="w-full border border-gray300 p-2 rounded-md outline-none focus:border-primary"
-    //             disabled={loading}
-    //           />
-    //         </div>
-
-    //         {/* Address */}
-    //         <div className="input-wrapper">
-    //           <label
-    //             htmlFor="address"
-    //             className="text-sm font-medium text-black600 mb-1 block"
-    //           >
-    //             Address
-    //             <span className="text-sm text-red500 ml-1">*</span>
-    //           </label>
-    //           <input
-    //             type="text"
-    //             id="address"
-    //             value={formData.address}
-    //             onChange={handleChange}
-    //             placeholder="Enter Address"
-    //             className="w-full border border-gray300 p-2 rounded-md outline-none focus:border-primary"
-    //             disabled={loading}
-    //           />
-    //         </div>
-
-    //         {/* Study Material Upload */}
-    //         <div className="input-wrapper">
-    //           <label
-    //             htmlFor="eventFile"
-    //             className="text-sm font-medium text-black600 mb-1 block"
-    //           >
-    //             Study Material
-    //             <span className="text-sm text-red500 ml-1">*</span>
-    //           </label>
-
-    //           <label
-    //             htmlFor="eventFile"
-    //             className="w-full cursor-pointer border border-gray300 p-2 rounded-md flex items-center justify-center gap-2 bg-white hover:border-primary transition"
-    //           >
-    //             <span className="flex items-center gap-2 text-sm text-gray500">
-    //               <img src={UploadIcon} alt="upload icon" className="max-w-8" />
-    //               Upload Study Material
-    //             </span>
-    //           </label>
-
-    //           <input
-    //             type="file"
-    //             id="eventFile"
-    //             className="hidden"
-    //             onChange={(e) => {
-    //               const file = e.target.files[0];
-    //               if (file) {
-    //                 let previewURL = null;
-    //                 if (file.type.startsWith("image/")) {
-    //                   previewURL = URL.createObjectURL(file);
-    //                 }
-
-    //                 setStudyMaterial({ file, previewURL });
-    //                 setEventImageName(file.name);
-    //               } else {
-    //                 setStudyMaterial(null);
-    //                 setEventImageName("No file chosen");
-    //               }
-    //             }}
-    //             accept=".pdf,.doc,.docx,image/*"
-    //             disabled={loading}
-    //           />
-
-    //           {/* Remove duplicate name display here */}
-    //           {/* <span className="text-sm text-black600">{eventImageName}</span> */}
-
-    //           {/* Preview */}
-    //           {studyMaterial && (
-    //             <div className="mt-2">
-    //               {studyMaterial.file?.type?.startsWith("image/") &&
-    //               studyMaterial.previewURL ? (
-    //                 <img
-    //                   src={studyMaterial.previewURL}
-    //                   alt="Study Material Preview"
-    //                   className="max-h-40 border border-gray-300 rounded-md"
-    //                   onError={() => {
-    //                     setStudyMaterial(null);
-    //                     setEventImageName("No file chosen");
-    //                   }}
-    //                 />
-    //               ) : (
-    //                 <p className="text-sm text-gray-700 mt-1">
-    //                   {studyMaterial.file?.name || "No file chosen"}
-    //                 </p>
-    //               )}
-    //             </div>
-    //           )}
-    //         </div>
-
-    //         {/* Submit */}
-    //         <div className="flex items-center justify-center">
-    //           <button
-    //             type="submit"
-    //             className="bg-primary rounded-md text-white py-2 px-6 transition mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
-    //             disabled={loading}
-    //           >
-    //             {loading ? "Saving..." : "Save"}
-    //           </button>
-    //         </div>
-    //       </form>
-    //     )}
-    //   </div>
-
-    //   {/* Quiz Card */}
-    //   <div className="pl-4 border-l border-gray300 flex items-center justify-center">
-    //     {loading ? (
-    //       <div className="flex justify-center items-center h-64">
-    //         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-    //       </div>
-    //     ) : error ? (
-    //       <div className="p-4 bg-red100 text-red700 rounded-md">{error}</div>
-    //     ) : (
-    //       announcement && (
-    //         <QuizCard
-    //           image={announcement.announcement_event_image}
-    //           title={announcement.announcement_name}
-    //           startDate={formatDate(announcement.registration_start_date)}
-    //           endDate={formatDate(announcement.registration_end_date)}
-    //           rounds={announcement.round_number}
-    //           duration={announcement.total_days}
-    //           registrationText={announcement.is_reg_open}
-    //           showCashPrize={announcement.is_pricemoney}
-    //           showCertificate={announcement.is_certificate}
-    //           termsLink="/terms-and-conditions"
-    //           organizer={announcement.organizer_name}
-    //         />
-    //       )
-    //     )}
-    //   </div>
-    // </div>
-
     <div className="space-y-10">
-      <h2 className="text-xl md:text-2xl 2xl:text-3xl text-black font-semibold mb-8">
-        Create New Round
-      </h2>
       <div className="max-w-4xl mx-auto px-4 space-y-6">
         {/* Quiz Card */}
+        <h2 className="text-xl md:text-2xl 2xl:text-3xl text-black font-semibold mb-8">
+          Create New Round
+        </h2>
         <div className="flex items-center justify-center pt-6 md:pt-0">
           {loading ? (
             <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-14 w-14 border-t-3 border-b-3 border-[#FF2474]"></div>
+              <FaSpinner className="animate-spin text-3xl xl:text-4xl text-primary" />
             </div>
           ) : error ? (
             <div className="p-6 bg-red-50 text-red-700 rounded-xl border-l-4 border-red-500 flex items-center">
@@ -660,6 +255,8 @@ const RoundCreateForm = () => {
                   showCertificate={announcement.is_certificate}
                   termsLink="/terms-and-conditions"
                   organizer={announcement.organizer_name}
+                  subject={announcement.subject}
+                  department_name={announcement.department_name}
                 />
               </div>
             )
@@ -726,34 +323,15 @@ const RoundCreateForm = () => {
                     id="round_name"
                     value={formData.round_name}
                     onChange={handleChange}
+                    onKeyDown={FormHandleEnterKey}
                     placeholder="Enter Round Name"
                     className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
                     disabled={loading}
                   />
                 </div>
 
-                {/* Topic Subject */}
-                <div className="input-wrapper">
-                  <label
-                    htmlFor="topic_subject"
-                    className="text-sm font-semibold text-gray-700 mb-2 flex items-center"
-                  >
-                    Topic Subject
-                    <span className="text-[#FF2474] ml-1">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="topic_subject"
-                    value={formData.topic_subject}
-                    onChange={handleChange}
-                    placeholder="Enter Topic Subject"
-                    className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
-                    disabled={loading}
-                  />
-                </div>
-
                 {/* Department */}
-                {/* <div className="input-wrapper">
+                <div className="input-wrapper">
                   <label
                     htmlFor="department"
                     className="text-sm font-semibold text-gray-700 mb-2 flex items-center"
@@ -766,81 +344,36 @@ const RoundCreateForm = () => {
                     id="department"
                     value={formData.department}
                     onChange={handleChange}
+                    onKeyDown={FormHandleEnterKey}
                     placeholder="Enter Department"
                     className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
                     disabled={loading}
                   />
-                </div> */}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="input-wrapper datepicker relative">
+                {/* Topic Subject */}
+                {/* <div className="input-wrapper">
                   <label
-                    htmlFor="quiz_start_date"
+                    htmlFor="topic_subject"
                     className="text-sm font-semibold text-gray-700 mb-2 flex items-center"
                   >
-                    Quiz Start Date
-                    <span className="text-[#FF2474] ml-1">*</span>
-                  </label>
-                  <div className="relative date_time">
-                    <DatePicker
-                      selected={formData.quiz_start_date}
-                      onChange={handleStartDateChange}
-                      placeholderText="Quiz Start Date"
-                      timeInputLabel="Time:"
-                      dateFormat="MM/dd/yyyy h:mm aa"
-                      showTimeInput
-                      className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
-                      disabled={loading}
-                    />
-                    <FaRegCalendarAlt className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-xl" />
-                  </div>
-                </div>
-
-                <div className="input-wrapper datepicker relative">
-                  <label
-                    htmlFor="quiz_end_date"
-                    className="text-sm font-semibold text-gray-700 mb-2 flex items-center"
-                  >
-                    Quiz End Date
-                    <span className="text-[#FF2474] ml-1">*</span>
-                  </label>
-                  <div className="relative date_time">
-                    <DatePicker
-                      selected={formData.quiz_end_date}
-                      onChange={handleEndDateChange}
-                      placeholderText="Quiz End Date"
-                      timeInputLabel="Time:"
-                      dateFormat="MM/dd/yyyy h:mm aa"
-                      showTimeInput
-                      className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
-                      disabled={loading}
-                    />
-                    <FaRegCalendarAlt className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-xl" />
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Quiz Dates & Duration */}
-
-                <div className="input-wrapper">
-                  <label
-                    htmlFor="duration"
-                    className="text-sm font-semibold text-gray-700 mb-2 flex items-center"
-                  >
-                    Duration
+                    Topic Subject
                     <span className="text-[#FF2474] ml-1">*</span>
                   </label>
                   <input
                     type="text"
-                    id="duration"
-                    value={getDurationText(formData.duration)}
-                    readOnly
-                    placeholder="Duration will be calculated"
-                    className="w-full border border-gray-300 p-3 rounded-lg outline-none bg-gray-100 cursor-not-allowed text-gray-600 font-medium"
-                    disabled
+                    id="topic_subject"
+                    value={formData.topic_subject}
+                    onChange={handleChange}
+                    onKeyDown={FormHandleEnterKey}
+                    placeholder="Enter Topic Subject"
+                    className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
+                    disabled={loading}
                   />
-                </div>
+                </div> */}
+
                 {/* Next Round Qualifier */}
                 <div className="input-wrapper">
                   <label
@@ -855,16 +388,93 @@ const RoundCreateForm = () => {
                     id="next_round_qualifier"
                     value={formData.next_round_qualifier}
                     onChange={handleChange}
+                    onKeyDown={FormHandleEnterKey}
                     placeholder="Enter Next Round Qualifier"
                     className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
                     disabled={loading}
                   />
                 </div>
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3 gap-4">
+                {/* Quiz Dates & Duration */}
+                <div className="input-wrapper datepicker relative">
+                  <label
+                    htmlFor="quiz_start_date"
+                    className="text-sm font-semibold text-gray-700 mb-2 flex items-center"
+                  >
+                    Quiz Start Date
+                    <span className="text-[#FF2474] ml-1">*</span>
+                  </label>
+                  <div className="relative date_time">
+                    <DatePicker
+                      ref={datePickerRef}
+                      selected={formData.quiz_start_date}
+                      onChange={handleStartDateChange}
+                      onKeyDown={FormHandleEnterKey}
+                      placeholderText="Quiz Start Date"
+                      timeInputLabel="Time:"
+                      dateFormat="MM/dd/yyyy h:mm aa"
+                      showTimeInput
+                      className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
+                      disabled={loading}
+                    />
+                    <FaRegCalendarAlt
+                      onClick={() => datePickerRef.current?.setFocus()}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-xl"
+                    />
+                  </div>
+                </div>
+                <div className="input-wrapper datepicker relative">
+                  <label
+                    htmlFor="quiz_end_date"
+                    className="text-sm font-semibold text-gray-700 mb-2 flex items-center"
+                  >
+                    Quiz End Date
+                    <span className="text-[#FF2474] ml-1">*</span>
+                  </label>
+                  <div className="relative date_time">
+                    <DatePicker
+                      ref={datePickerRefEnd}
+                      selected={formData.quiz_end_date}
+                      onChange={handleEndDateChange}
+                      onKeyDown={FormHandleEnterKey}
+                      placeholderText="Quiz End Date"
+                      timeInputLabel="Time:"
+                      dateFormat="MM/dd/yyyy h:mm aa"
+                      showTimeInput
+                      className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
+                      disabled={loading}
+                    />
+                    <FaRegCalendarAlt
+                      onClick={() => datePickerRefEnd.current?.setFocus()}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-xl"
+                    />
+                  </div>
+                </div>
+                <div className="input-wrapper">
+                  <label
+                    htmlFor="duration"
+                    className="text-sm font-semibold text-gray-700 mb-2 flex items-center"
+                  >
+                    Duration
+                    <span className="text-[#FF2474] ml-1">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="duration"
+                    value={getDurationText(formData.duration)}
+                    onKeyDown={FormHandleEnterKey}
+                    readOnly
+                    placeholder="Duration will be calculated"
+                    className="w-full border border-gray-300 p-3 rounded-lg outline-none bg-gray-100 cursor-not-allowed text-gray-600 font-medium"
+                    disabled
+                  />
+                </div>
+              </div>
 
               {/* Total Questions, Marks, Negative Marks */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* <div className="input-wrapper">
+                <div className="input-wrapper">
                   <label
                     htmlFor="total_questions"
                     className="text-sm font-semibold text-gray-700 mb-2 flex items-center"
@@ -877,13 +487,14 @@ const RoundCreateForm = () => {
                     id="total_questions"
                     value={formData.total_questions}
                     onChange={handleChange}
+                    onKeyDown={FormHandleEnterKey}
                     placeholder="Enter Total Questions"
                     className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none !bg-gray-50"
                     disabled={loading}
                   />
-                </div> */}
+                </div>
 
-                {/* <div className="input-wrapper">
+                <div className="input-wrapper">
                   <label
                     htmlFor="marks_per_question"
                     className="text-sm font-semibold text-gray-700 mb-2 flex items-center"
@@ -896,6 +507,7 @@ const RoundCreateForm = () => {
                     id="marks_per_question"
                     value={formData.marks_per_question}
                     onChange={handleChange}
+                    onKeyDown={FormHandleEnterKey}
                     placeholder="Enter Marks per Question"
                     className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none !bg-gray-50"
                     disabled={loading}
@@ -914,16 +526,17 @@ const RoundCreateForm = () => {
                     id="negative_marks_per_question"
                     value={formData.negative_marks_per_question}
                     onChange={handleChange}
+                    onKeyDown={FormHandleEnterKey}
                     placeholder="Enter Negative Marks"
                     className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
                     disabled={loading}
                   />
-                </div> */}
+                </div>
               </div>
 
               {/* Question Type & Exam Type */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* <div className="input-wrapper">
+                <div className="input-wrapper">
                   <label
                     htmlFor="question_type"
                     className="text-sm font-semibold text-gray-700 mb-2 flex items-center"
@@ -935,6 +548,7 @@ const RoundCreateForm = () => {
                     id="question_type"
                     value={formData.question_type}
                     onChange={handleChange}
+                    onKeyDown={FormHandleEnterKey}
                     className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50 appearance-none"
                     disabled={loading}
                   >
@@ -950,7 +564,7 @@ const RoundCreateForm = () => {
                       <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
                     </svg>
                   </div>
-                </div> */}
+                </div>
 
                 <div className="input-wrapper">
                   <label
@@ -964,6 +578,7 @@ const RoundCreateForm = () => {
                     id="exam_type"
                     value={formData.exam_type}
                     onChange={handleChange}
+                    onKeyDown={FormHandleEnterKey}
                     className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50 appearance-none"
                     disabled={loading}
                   >
@@ -982,25 +597,26 @@ const RoundCreateForm = () => {
                     </svg>
                   </div>
                 </div>
-                {/* Address */}
-                <div className="input-wrapper">
-                  <label
-                    htmlFor="address"
-                    className="text-sm font-semibold text-gray-700 mb-2 flex items-center"
-                  >
-                    Address
-                    <span className="text-[#FF2474] ml-1">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="address"
-                    value={formData.address}
-                    onChange={handleChange}
-                    placeholder="Enter Address"
-                    className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
-                    disabled={loading}
-                  />
-                </div>
+              </div>
+
+              {/* Address */}
+              <div className="input-wrapper">
+                <label
+                  htmlFor="address"
+                  className="text-sm font-semibold text-gray-700 mb-2 flex items-center"
+                >
+                  Address
+                </label>
+                <input
+                  type="text"
+                  id="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  onKeyDown={FormHandleEnterKey}
+                  placeholder="Enter Address"
+                  className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
+                  disabled={loading}
+                />
               </div>
 
               {/* Study Material Upload */}
@@ -1054,6 +670,7 @@ const RoundCreateForm = () => {
                       setEventImageName("No file chosen");
                     }
                   }}
+                  onKeyDown={FormHandleEnterKey}
                   accept=".pdf,.doc,.docx,image/*"
                   disabled={loading}
                 />
@@ -1138,6 +755,68 @@ const RoundCreateForm = () => {
               <div className="flex items-center justify-center pt-4">
                 <button
                   type="submit"
+                  disabled={submitLoading}
+                  className={`relative flex items-center justify-center bg-gradient-to-r from-[#FF2474] to-[#FF5C8A] 
+      rounded text-white font-semibold py-3 px-8 transition-all duration-300 
+      ${
+        submitLoading
+          ? "opacity-70 cursor-not-allowed"
+          : "hover:scale-105 hover:shadow-lg"
+      }
+    `}
+                >
+                  {submitLoading ? (
+                    <>
+                      <svg
+                        className="animate-spin h-5 w-5 text-white mr-2"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 
+              0 5.373 0 12h4zm2 
+              5.291A7.962 7.962 0 014 12H0c0 
+              3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span className="flex items-center">
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M5 13l4 4L19 7"
+                        ></path>
+                      </svg>
+                      Save Round
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* <div className="flex items-center justify-center pt-4">
+                <button
+                  type="submit"
                   className="bg-gradient-to-r from-[#FF2474] to-[#FF5C8A] rounded text-white font-semibold py-3 px-8 transition-all duration-300 transform hover:scale-105 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex items-center"
                   disabled={loading}
                 >
@@ -1185,7 +864,7 @@ const RoundCreateForm = () => {
                     </>
                   )}
                 </button>
-              </div>
+              </div> */}
             </form>
           )}
         </div>
@@ -1194,4 +873,4 @@ const RoundCreateForm = () => {
   );
 };
 
-export default RoundCreateForm;
+export default RoundCreationForm;

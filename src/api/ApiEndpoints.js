@@ -10,7 +10,7 @@ export const API_ENDPOINS = {
   USER_INFO: "/auth/personal-info/",
   UPDATE_PROFILE: "/auth/update-personal-info/",
   CREATE_ANNOUNCEMENT: "/anc/create-announcement/",
-  GET_ANNOUNCEMENTS: "/anc/own-announcement-list/",
+  GET_ANNOUNCEMENTS: "/anc/own-event-list/",
   UPDATE_QUIZCARD: "/anc/edit-announcement/",
   QUIZCARD_ACTIVE: "/anc/active-announcement/",
   QUIZCARD_INACTIVE: "/anc/in-active-announcement/",

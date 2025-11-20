@@ -196,7 +196,11 @@ const PresidentEvents = () => {
               termsLink="/terms-and-conditions"
               organizer={ann.organizer_name}
               showSwitcher={true}
+              annOpenClose={true}
               closedQuiz={true}
+              subject={ann.subject}
+              department_name={ann.department_name}
+              activeAnn="true"
             />
             <div className="flex items-center gap-2 mt-2">
               <Link
