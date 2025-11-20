@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import Header from "../../components/Header";
 import HeaderTop from "../../components/HeaderTop";
-import Hero from "../../components/hero/Hero";
+import Hero from "../../components/Hero/Hero";
 
 const Home = () => {
   const announcementRef = useRef(null);
