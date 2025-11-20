@@ -13,7 +13,7 @@ import ForgotPasswordOtp from "./pages/auth/ForgotPasswordOtp";
 import Login from "./pages/auth/Login";
 import OtpVarify from "./pages/auth/OtpVarify";
 import Registration from "./pages/auth/Registration";
-import Home from "./pages/home/Home";
+import Home from "./pages/Home/Home";
 import ClosedQuiz from "./pages/landing-pages/ClosedQuiz";
 import WinnerAnnouncement from "./pages/landing-pages/WinnerAnnouncement";
 import WinnerAnnouncementDetails from "./pages/landing-pages/WinnerAnnouncementDetails";
