@@ -11,7 +11,7 @@ import "react-toastify/dist/ReactToastify.css";
 import API from "../../../api/API";
 import { API_ENDPOINS } from "../../../api/ApiEndpoints";
 
-const AnnouncementCreationForm = () => {
+const CreateEventCreationForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -451,7 +451,7 @@ const AnnouncementCreationForm = () => {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-6xl mx-auto rounded-xl shadow-md p-8 md:p-10 lg:p-12">
         <h3 className="text-2xl font-semibold text-gray-800 mb-8 text-center">
-          {id ? "Edit Announcement" : "Announcement Creation Form"}
+          {id ? "Edit Event" : "Event Creation Form"}
         </h3>
         <form
           onSubmit={postData}
@@ -465,7 +465,7 @@ const AnnouncementCreationForm = () => {
                 htmlFor="announcement_name"
                 className="text-sm font-medium text-gray700 mb-1 block"
               >
-                Announcement Name
+                Event Name
                 <span className="text-sm text-red-500 ml-1">*</span>
               </label>
               <input
@@ -584,6 +584,81 @@ const AnnouncementCreationForm = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="input-wrapper relative">
               <label className="text-sm font-medium text-gray700 mb-1 block">
+                Class/Department <span className="text-red-500">*</span>
+              </label>
+
+              {deptLoading ? (
+                <div className="flex items-center gap-2 text-gray-600">
+                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Loading...</span>
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    value={deptInput}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setDeptInput(val);
+
+                      if (val.trim() === "") {
+                        setFilteredDepartments(classDepartments);
+                      } else {
+                        const filtered = classDepartments.filter((d) =>
+                          d.class_department
+                            .toLowerCase()
+                            .includes(val.toLowerCase())
+                        );
+                        setFilteredDepartments(filtered);
+                      }
+                    }}
+                    onFocus={() => {
+                      setFilteredDepartments(classDepartments);
+                      setShowDeptSuggestions(true);
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => setShowDeptSuggestions(false), 200);
+                    }}
+                    placeholder="Search or select Class/Department"
+                    className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary outline-none bg-gray-50"
+                  />
+
+                  {/* Dropdown List */}
+                  {showDeptSuggestions && filteredDepartments.length > 0 && (
+                    <ul className="absolute bg-white border border-gray-300 rounded-md mt-1 w-full max-h-60 overflow-y-auto shadow-lg z-30">
+                      {filteredDepartments.map((dept) => (
+                        <li
+                          key={dept.id}
+                          className="px-4 py-3 cursor-pointer hover:bg-indigo-50 text-sm transition-colors"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              class_department_id: dept.id.toString(),
+                            }));
+                            setDeptInput(dept.class_department);
+                            setShowDeptSuggestions(false);
+                          }}
+                        >
+                          {dept.class_department}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {/* No results */}
+                  {showDeptSuggestions &&
+                    filteredDepartments.length === 0 &&
+                    deptInput && (
+                      <div className="absolute bg-white border border-gray-300 rounded-md mt-1 w-full p-3 text-sm text-gray-500 text-center">
+                        No department found
+                      </div>
+                    )}
+                </>
+              )}
+            </div>
+            {/* <div className="input-wrapper relative">
+              <label className="text-sm font-medium text-gray700 mb-1 block">
                 Class/Department <span className="text-red500">*</span>
               </label>
 
@@ -644,7 +719,7 @@ const AnnouncementCreationForm = () => {
                     )}
                 </>
               )}
-            </div>
+            </div> */}
             {/* tutor share questions */}
             <div className="input-wrapper">
               <label
@@ -663,6 +738,9 @@ const AnnouncementCreationForm = () => {
                 className="w-full border border-gray-300 rounded-md p-2.5 focus:border-primary focus:ring-primary outline-none bg-gray-50"
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* question types */}
             <div className="input-wrapper">
               <label
@@ -683,9 +761,6 @@ const AnnouncementCreationForm = () => {
                 <option value="mcq">MCQ</option>
               </select>
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* exam types */}
             <div className="input-wrapper">
               <label
@@ -1048,7 +1123,7 @@ const AnnouncementCreationForm = () => {
   );
 };
 
-export default AnnouncementCreationForm;
+export default CreateEventCreationForm;
 
 // import { format } from "date-fns";
 // import { useEffect, useState } from "react";

@@ -35,6 +35,7 @@ const QuizCard = ({
   subject,
   department_name,
   activeAnn,
+  hideSubAndDept,
 }) => {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const isHorizontal = layout === "horizontal";
@@ -66,8 +67,8 @@ const QuizCard = ({
       {!isHorizontal ? (
         <div className="flex flex-col">
           {/* Title and Date - Top Section */}
-          <div className="px-6 pt-6 pb-4">
-            <h4 className="text-[22px] font-bold text-gray-900 mb-3">
+          <div className={`px-6 pt-6 ${hideSubAndDept ? "pb-0" : "pb-4"}`}>
+            <h4 className="text-[22px] font-bold text-gray-900 mb-2">
               {title}
             </h4>
             <p className="text-sm text-secondary font-medium">
@@ -77,26 +78,32 @@ const QuizCard = ({
 
           {/* subject and Department name */}
           <div className="px-6 pb-4 flex items-center flex-wrap gap-2">
-            <Link
-              to={`/announcement-details/${quizId}`}
-              state={{ scrollTo: "gratifications" }}
-              className="text-sm text-gray-600 border border-gray-300 py-1 px-2 rounded-full"
-            >
-              <span className="text-gray-500">Subject:</span>{" "}
-              <span className="font-semibold text-gray-800">{subject}</span>
-            </Link>
-            <Link
-              to={`/announcement-details/${quizId}`}
-              state={{ scrollTo: "gratifications" }}
-              className="flex items-center gap-1 border border-gray-300 py-1 px-2 rounded-full bg-pink-50"
-            >
-              <span className="text-sm font-semibold text-gray-700">
-                Departmenent:
-              </span>
-              <span className="text-sm font-bold text-green-600">
-                {department_name}
-              </span>
-            </Link>
+            {hideSubAndDept ? (
+              ""
+            ) : (
+              <div>
+                <Link
+                  to={`/announcement-details/${quizId}`}
+                  state={{ scrollTo: "gratifications" }}
+                  className="text-sm text-gray-600 border border-gray-300 py-1 px-2 rounded-full"
+                >
+                  <span className="text-gray-500">Subject:</span>{" "}
+                  <span className="font-semibold text-gray-800">{subject}</span>
+                </Link>
+                <Link
+                  to={`/announcement-details/${quizId}`}
+                  state={{ scrollTo: "gratifications" }}
+                  className="flex items-center gap-1 border border-gray-300 py-1 px-2 rounded-full bg-pink-50"
+                >
+                  <span className="text-sm font-semibold text-gray-700">
+                    Departmenent:
+                  </span>
+                  <span className="text-sm font-bold text-green-600">
+                    {department_name}
+                  </span>
+                </Link>
+              </div>
+            )}
           </div>
           {/* Organizer and Prize Info */}
           <div className="px-6 pb-4 flex items-center gap-2">
