@@ -31,6 +31,7 @@ const StudentQuizCard = ({
   cardButtonText,
   department_name,
   subject,
+  eventRound,
 }) => {
   const isHorizontal = layout === "horizontal";
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -193,6 +194,33 @@ const StudentQuizCard = ({
         <div className="flex flex-col gap-2 mb-1">
           {lp_status === "open" &&
             (registared ? (
+              <div className="w-full flex flex-col gap-2">
+                {/* Show ONLY View Round if eventRound exists */}
+                {eventRound ? (
+                  <Link
+                    to={`/student/event-round/${quizId}`}
+                    className="flex items-center justify-center text-base font-bold py-2 rounded-lg bg-blue-600 text-white transition-all duration-300 shadow-md hover:shadow-lg"
+                  >
+                    View Round
+                  </Link>
+                ) : (
+                  /* Show ONLY Already Registered if eventRound not passed */
+                  <p className="w-full text-center text-base font-bold py-2 rounded-lg bg-green-600 text-white cursor-not-allowed">
+                    Already Registered
+                  </p>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={() => onButtonClick(quizId)}
+                className="w-full text-base font-bold py-2 rounded-lg bg-gradient-to-r from-gradientEnd to-gradientStart text-white transition-all duration-300 shadow-md hover:shadow-lg"
+              >
+                Register Now
+              </button>
+            ))}
+
+          {/* {lp_status === "open" &&
+            (registared ? (
               <p className="w-full text-center text-base font-bold py-2 rounded-lg bg-green-600 text-white cursor-not-allowed">
                 Already Registered
               </p>
@@ -203,7 +231,7 @@ const StudentQuizCard = ({
               >
                 Register Now
               </button>
-            ))}
+            ))} */}
 
           {lp_status === "upcoming" && (
             <button

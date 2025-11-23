@@ -36,6 +36,9 @@ import QuizDetails from "./pages/QuizDetails/QuizDetails";
 import AllAnnouncementList from "./pages/student/AllAnnouncementList";
 import AllParticipationList from "./pages/student/AllParticipationList";
 import Dashboard from "./pages/student/Dashboard";
+import EventDashboard from "./pages/student/event/EventDashboard";
+import QuizQuestionPaperEvent from "./pages/student/event/QuizQuestionPaperEvent";
+import RoundAnnouncementEvent from "./pages/student/event/RoundAnnouncementEvent";
 import MyAnnouncement from "./pages/student/MyAnnouncement";
 import QuizQuestionPaper from "./pages/student/roundAnnouncement/QuizQuestionPaper";
 import RoundAnnouncement from "./pages/student/roundAnnouncement/RoundAnnouncement";
@@ -151,6 +154,7 @@ function App() {
       <Route element={<RouteRestriction type="private" role="student" />}>
         <Route element={<StudentLayout />}>
           <Route path="/student/dashboard" element={<Dashboard />} />
+          <Route path="/student/events" element={<EventDashboard />} />
           <Route path="/student/profile" element={<StudentDashboard />} />
           {/* <Route path="/student/dashboard" element={<StudentDashboard />} /> */}
           {/* <Route
@@ -171,6 +175,10 @@ function App() {
             element={<RoundAnnouncement />}
           />
           <Route
+            path="/student/event-round/:quizId"
+            element={<RoundAnnouncementEvent />}
+          />
+          <Route
             path="/student/participation-details/:round"
             element={<RoundParticipationDetails />}
           />
@@ -179,6 +187,10 @@ function App() {
           <Route path="/quiz-table" element={<QuizTable />} />
         </Route>
         <Route path="/quiz/:round/:quizId" element={<QuizQuestionPaper />} />
+        <Route
+          path="/quiz/:quizId/round/:round/set/:set"
+          element={<QuizQuestionPaperEvent />}
+        />
         <Route
           path="/quiz-answer/:roundId?"
           element={<QuestionsAnswerShit />}

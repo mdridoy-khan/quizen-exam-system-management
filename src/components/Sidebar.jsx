@@ -18,6 +18,11 @@ const Sidebar = ({ role, isSidebarOpen, toggleSidebar, handleLogout }) => {
         label: "Dashboard",
       },
       {
+        to: "/student/events",
+        icon: <GoHome size={18} />,
+        label: "Events",
+      },
+      {
         to: "/student/all-announcement",
         icon: <GrAnnounce size={18} />,
         label: "All Announcement",

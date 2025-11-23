@@ -16,6 +16,7 @@ export const API_ENDPOINS = {
   QUIZCARD_ACTIVE: "/anc/active-announcement/",
   QUIZCARD_INACTIVE: "/anc/in-active-announcement/",
   ANNOUNCEMENT_LIST: "/anc/announcement-list-lp",
+  EVENT_LIST: "/anc/event-list-std-dashboard",
   OWN_DATA: "/anc/single-announcement-details/",
   INACTIVE_ANNOUNCEMENT_LIST: "/anc/in-active-announcement-list-lp",
   CLOSED_QUIZ: "/anc/closed-anc-list-lp/",
