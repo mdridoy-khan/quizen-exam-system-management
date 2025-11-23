@@ -148,7 +148,7 @@ const BannerSlider = ({ onScroll }) => {
                     <div className="flex items-center justify-center w-14 h-14 bg-[#ECF1FC] rounded-xl">
                       <img src={UserPlus} alt="User Icon" className="max-w-6" />
                     </div>
-                    <div>
+                    <div className="text-left">
                       <h3 className="text-2xl font-bold text-white">
                         <CountUp
                           end={totalA?.total_participants || 0}
@@ -169,7 +169,7 @@ const BannerSlider = ({ onScroll }) => {
                         className="max-w-6"
                       />
                     </div>
-                    <div>
+                    <div className="text-left">
                       <h3 className="text-2xl font-bold text-white">
                         <CountUp end={totalA?.total_winner || 0} duration={5} />
                         +
@@ -187,7 +187,7 @@ const BannerSlider = ({ onScroll }) => {
                         className="max-w-6"
                       />
                     </div>
-                    <div>
+                    <div className="text-left">
                       <h3 className="text-2xl font-bold text-white">
                         <CountUp
                           end={totalA?.total_quizzes || 0}

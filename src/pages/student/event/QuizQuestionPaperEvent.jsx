@@ -9,7 +9,7 @@ const QuizQuestionPaperEvent = () => {
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [completedPages, setCompletedPages] = useState({});
   const [timeLeft, setTimeLeft] = useState(0);
-  const [initialTimeLeft, setInitialTimeLeft] = useState(0); // Track initial remaining time
+  const [initialTimeLeft, setInitialTimeLeft] = useState(0);
   const [totalDurationSeconds, setTotalDurationSeconds] = useState(0);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [showResults, setShowResults] = useState(false);
