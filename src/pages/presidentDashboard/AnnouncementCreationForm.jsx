@@ -33,6 +33,7 @@ const AnnouncementCreationForm = () => {
     is_certificate: false,
     is_exciting_price: false,
     tutor_share_qes_number: "",
+    is_event: false,
   });
 
   const [startDate, setStartDate] = useState(null);

@@ -77,11 +77,11 @@ const QuizCard = ({
           </div>
 
           {/* subject and Department name */}
-          <div className="px-6 pb-4 flex items-center flex-wrap gap-2">
+          <div className="mt-4">
             {hideSubAndDept ? (
               ""
             ) : (
-              <div>
+              <div className="px-6 pb-4 flex items-center flex-wrap gap-2">
                 <Link
                   to={`/announcement-details/${quizId}`}
                   state={{ scrollTo: "gratifications" }}
