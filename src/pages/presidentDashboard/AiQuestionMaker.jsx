@@ -19,7 +19,7 @@ const AiQuestionMaker = () => {
   const [link, setLink] = useState("");
   const [linkError, setLinkError] = useState("");
   const [inputMode, setInputMode] = useState("file");
-  const [details, setDetails] = useState(null); // round or announcement details
+  const [details, setDetails] = useState(null);
   const [isRoundMode, setIsRoundMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -32,10 +32,10 @@ const AiQuestionMaker = () => {
   const [marksPerQuestion, setMarksPerQuestion] = useState(1);
   const [negativeMarks, setNegativeMarks] = useState(0);
 
-  // Subject Multi-select
+  // Subject Single Select (এখানে পরিবর্তন)
   const [categories, setCategories] = useState([]);
   const [categoryLoading, setCategoryLoading] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(""); // শুধু একটা
   const [categoryInput, setCategoryInput] = useState("");
   const [filteredCategories, setFilteredCategories] = useState([]);
   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
@@ -56,7 +56,7 @@ const AiQuestionMaker = () => {
   const [noticeData, setNoticeData] = useState([]);
   const [loadingNoticeMessage, setLoadingNoticeMessage] = useState(false);
 
-  // Fetch Details (Round or Announcement)
+  // Fetch Details
   useEffect(() => {
     const fetchDetails = async () => {
       if (!roundId && !announcementId) return;
@@ -88,7 +88,7 @@ const AiQuestionMaker = () => {
     fetchDetails();
   }, [roundId, annId, announcementId]);
 
-  // Fetch Categories (Subjects)
+  // Fetch Categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -128,16 +128,22 @@ const AiQuestionMaker = () => {
     getNotice();
   }, [annId, announcementId]);
 
-  // Category Select & Outside Click
+  // Handle Subject Selection (শুধু একটা)
   const handleCategorySelect = (cat) => {
     const name = cat.category_name;
-    if (!selectedCategories.includes(name)) {
-      setSelectedCategories([...selectedCategories, name]);
-    }
+    setSelectedCategory(name);
+    setCategoryInput(name);
+    setShowCategorySuggestions(false);
+  };
+
+  // Clear selected category
+  const clearCategory = () => {
+    setSelectedCategory("");
     setCategoryInput("");
     setShowCategorySuggestions(false);
   };
 
+  // Outside Click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (categoryRef.current && !categoryRef.current.contains(e.target)) {
@@ -168,7 +174,7 @@ const AiQuestionMaker = () => {
     setLinkError(value && !urlPattern.test(value) ? "Invalid URL" : "");
   };
 
-  // Submit Form - Generate Quiz
+  // Generate Quiz
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (inputMode === "link" && linkError)
@@ -206,8 +212,7 @@ const AiQuestionMaker = () => {
 
   // Save Quiz
   const handleQuizQuestionSave = async () => {
-    if (selectedCategories.length === 0)
-      return toast.error("Select at least one subject");
+    if (!selectedCategory) return toast.error("Please select a subject");
 
     const targetAnnId = annId || announcementId;
     if (!targetAnnId) return toast.error("Announcement ID missing");
@@ -217,7 +222,7 @@ const AiQuestionMaker = () => {
       const payload = {
         quiz_prompt: prompt,
         quiz_link: link || "",
-        subjects: selectedCategories,
+        subjects: [selectedCategory], // অ্যারে হিসেবে পাঠানো হচ্ছে
         marks_per_question: marksPerQuestion,
         negative_marks_per_question: negativeMarks,
         quiz: questions.map((q, index) => ({
@@ -357,7 +362,6 @@ const AiQuestionMaker = () => {
           onSubmit={handleSubmit}
           className="bg-white rounded-xl shadow-md p-8"
         >
-          {/* Quiz Options Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {/* Number of Questions */}
             <div>
@@ -373,7 +377,7 @@ const AiQuestionMaker = () => {
               />
             </div>
 
-            {/* Subject Multi-select */}
+            {/* Subject Single Select */}
             <div className="lg:col-span-2">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Subject <span className="text-red-500">*</span>
@@ -385,6 +389,7 @@ const AiQuestionMaker = () => {
                   onChange={(e) => {
                     const val = e.target.value;
                     setCategoryInput(val);
+                    setSelectedCategory("");
                     const filtered = val
                       ? categories.filter((c) =>
                           c.category_name
@@ -395,19 +400,48 @@ const AiQuestionMaker = () => {
                     setFilteredCategories(filtered);
                     setShowCategorySuggestions(true);
                   }}
-                  onFocus={() => setShowCategorySuggestions(true)}
-                  placeholder="Search subjects..."
-                  className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                  onFocus={() => {
+                    if (!showCategorySuggestions) {
+                      setFilteredCategories(categories);
+                      setShowCategorySuggestions(true);
+                    }
+                  }}
+                  onClick={() => {
+                    if (!showCategorySuggestions) {
+                      setFilteredCategories(categories);
+                      setShowCategorySuggestions(true);
+                    }
+                  }}
+                  placeholder="Search and select a subject..."
+                  className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none pr-12 cursor-pointer"
                 />
 
+                {/* Clear Button */}
+                {selectedCategory && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      clearCategory();
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-red-600 z-10"
+                  >
+                    <RxCross2 size={20} />
+                  </button>
+                )}
+
+                {/* Suggestions Dropdown */}
                 {showCategorySuggestions && filteredCategories.length > 0 && (
                   <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-64 overflow-y-auto">
                     {filteredCategories.map((cat) => (
                       <li
                         key={cat.id}
-                        onClick={() => handleCategorySelect(cat)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCategorySelect(cat);
+                        }}
                         className={`px-4 py-3 hover:bg-primary hover:text-white cursor-pointer flex items-center gap-2 ${
-                          selectedCategories.includes(cat.category_name)
+                          selectedCategory === cat.category_name
                             ? "bg-primary text-white"
                             : ""
                         }`}
@@ -418,32 +452,69 @@ const AiQuestionMaker = () => {
                     ))}
                   </ul>
                 )}
-
-                {selectedCategories.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {selectedCategories.map((cat) => (
-                      <span
-                        key={cat}
-                        className="inline-flex items-center bg-gradient-to-r from-primary to-secondary text-white px-4 py-2 rounded-full text-sm font-medium"
-                      >
-                        {cat}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setSelectedCategories(
-                              selectedCategories.filter((c) => c !== cat)
-                            )
-                          }
-                          className="ml-2 hover:bg-white hover:bg-opacity-20 rounded-full w-6 h-6 flex items-center justify-center"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
+            {/* <div className="lg:col-span-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Subject <span className="text-red-500">*</span>
+              </label>
+              <div className="relative" ref={categoryRef}>
+                <input
+                  type="text"
+                  value={categoryInput}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCategoryInput(val);
+                    setSelectedCategory("");
+                    const filtered = val
+                      ? categories.filter((c) =>
+                          c.category_name
+                            .toLowerCase()
+                            .includes(val.toLowerCase())
+                        )
+                      : categories;
+                    setFilteredCategories(filtered);
+                    setShowCategorySuggestions(true);
+                  }}
+                  onFocus={() =>
+                    !selectedCategory && setShowCategorySuggestions(true)
+                  }
+                  placeholder="Search and select a subject..."
+                  className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none pr-12"
+                  readOnly={!!selectedCategory}
+                  style={{ cursor: selectedCategory ? "pointer" : "text" }}
+                />
+
+                
+                {selectedCategory && (
+                  <button
+                    type="button"
+                    onClick={clearCategory}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-red-600"
+                  >
+                    <RxCross2 size={20} />
+                  </button>
+                )}
+
+                
+                {showCategorySuggestions &&
+                  filteredCategories.length > 0 &&
+                  !selectedCategory && (
+                    <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-64 overflow-y-auto">
+                      {filteredCategories.map((cat) => (
+                        <li
+                          key={cat.id}
+                          onClick={() => handleCategorySelect(cat)}
+                          className="px-4 py-3 hover:bg-primary hover:text-white cursor-pointer flex items-center gap-2"
+                        >
+                          <TbCategoryPlus />
+                          {cat.category_name}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+              </div>
+            </div> */}
 
             {/* Marks */}
             <div>
@@ -522,7 +593,6 @@ const AiQuestionMaker = () => {
 
           {/* Input Area */}
           <div className="space-y-8">
-            {/* Text / File / Link Inputs */}
             {inputMode === "text" && (
               <textarea
                 placeholder="Paste your text content here..."
@@ -571,7 +641,6 @@ const AiQuestionMaker = () => {
               </div>
             )}
 
-            {/* Prompt */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Additional Prompt (Optional)
@@ -584,7 +653,6 @@ const AiQuestionMaker = () => {
               />
             </div>
 
-            {/* Submit */}
             <div className="text-right">
               <button
                 type="submit"
@@ -623,7 +691,8 @@ const AiQuestionMaker = () => {
                     <strong>Language:</strong> {language}
                   </div>
                   <div>
-                    <strong>Subjects:</strong> {selectedCategories.join(", ")}
+                    <strong>Subject:</strong>{" "}
+                    {selectedCategory || "Not selected"}
                   </div>
                   <div>
                     <strong>Marks/Q:</strong> {marksPerQuestion}
@@ -668,6 +737,677 @@ const AiQuestionMaker = () => {
 };
 
 export default AiQuestionMaker;
+
+// import { useEffect, useRef, useState } from "react";
+// import { AiOutlineEdit, AiOutlineFile, AiOutlineLink } from "react-icons/ai";
+// import { FaExclamationCircle, FaSpinner } from "react-icons/fa";
+// import { GiStarFormation } from "react-icons/gi";
+// import { RxCross2 } from "react-icons/rx";
+// import { TbCategoryPlus, TbExclamationCircle } from "react-icons/tb";
+// import { Link, useNavigate, useParams } from "react-router-dom";
+// import { toast } from "react-toastify";
+// import API from "../../api/API";
+// import { formatDateTime } from "../../utils/FormateDateTime";
+
+// const AiQuestionMaker = () => {
+//   // Params
+//   const { roundId, annId, announcementId } = useParams();
+//   const navigate = useNavigate();
+
+//   // Core States
+//   const [selectedFile, setSelectedFile] = useState(null);
+//   const [link, setLink] = useState("");
+//   const [linkError, setLinkError] = useState("");
+//   const [inputMode, setInputMode] = useState("file");
+//   const [details, setDetails] = useState(null);
+//   const [isRoundMode, setIsRoundMode] = useState(false);
+//   const [loading, setLoading] = useState(false);
+//   const [error, setError] = useState(null);
+
+//   // Quiz Options
+//   const [numberOfQuestions, setNumberOfQuestions] = useState(1);
+//   const [language, setLanguage] = useState("english");
+//   const [difficulty, setDifficulty] = useState("easy");
+//   const [questionType, setQuestionType] = useState("multiple");
+//   const [marksPerQuestion, setMarksPerQuestion] = useState(1);
+//   const [negativeMarks, setNegativeMarks] = useState(0);
+
+//   // Subject Multi-select
+//   const [categories, setCategories] = useState([]);
+//   const [categoryLoading, setCategoryLoading] = useState(false);
+//   const [selectedCategories, setSelectedCategories] = useState([]);
+//   const [categoryInput, setCategoryInput] = useState("");
+//   const [filteredCategories, setFilteredCategories] = useState([]);
+//   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
+//   const categoryRef = useRef(null);
+
+//   // Input & Prompt
+//   const [textInput, setTextInput] = useState("");
+//   const [prompt, setPrompt] = useState("");
+
+//   // Result & Modal
+//   const [quizResponse, setQuizResponse] = useState(null);
+//   const [questions, setQuestions] = useState([]);
+//   const [showModal, setShowModal] = useState(false);
+//   const [isSaving, setIsSaving] = useState(false);
+
+//   // Notice
+//   const [showNotice, setShowNotice] = useState(true);
+//   const [noticeData, setNoticeData] = useState([]);
+//   const [loadingNoticeMessage, setLoadingNoticeMessage] = useState(false);
+
+//   // Fetch Details (Round or Announcement)
+//   useEffect(() => {
+//     const fetchDetails = async () => {
+//       if (!roundId && !announcementId) return;
+
+//       setLoading(true);
+//       try {
+//         let response;
+//         if (roundId && annId) {
+//           response = await API.get(
+//             `/anc/single-round-details-view/${roundId}/`
+//           );
+//           setIsRoundMode(true);
+//         } else if (announcementId) {
+//           response = await API.get(
+//             `/anc/single-announcement-details/${announcementId}/`
+//           );
+//           setIsRoundMode(false);
+//         }
+//         setDetails(response.data.data);
+//         if (response.data.data?.total_questions) {
+//           setNumberOfQuestions(response.data.data.total_questions);
+//         }
+//       } catch (err) {
+//         setError("Failed to fetch details.");
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+//     fetchDetails();
+//   }, [roundId, annId, announcementId]);
+
+//   // Fetch Categories (Subjects)
+//   useEffect(() => {
+//     const fetchCategories = async () => {
+//       try {
+//         setCategoryLoading(true);
+//         const res = await API.get("/auth/category/");
+//         if (res.status === 200 && Array.isArray(res.data)) {
+//           setCategories(res.data);
+//           setFilteredCategories(res.data);
+//         }
+//       } catch (err) {
+//         toast.error("Failed to load subjects");
+//       } finally {
+//         setCategoryLoading(false);
+//       }
+//     };
+//     fetchCategories();
+//   }, []);
+
+//   // Fetch Notice
+//   useEffect(() => {
+//     const anncId = annId || announcementId;
+//     if (!anncId) return;
+
+//     const getNotice = async () => {
+//       setLoadingNoticeMessage(true);
+//       try {
+//         const res = await API.get(
+//           `/anc/view-announcement-notice-anc/${anncId}/`
+//         );
+//         if (res.data.status) setNoticeData(res.data.data);
+//       } catch (err) {
+//         console.error(err);
+//       } finally {
+//         setLoadingNoticeMessage(false);
+//       }
+//     };
+//     getNotice();
+//   }, [annId, announcementId]);
+
+//   // Category Select & Outside Click
+//   const handleCategorySelect = (cat) => {
+//     const name = cat.category_name;
+//     if (!selectedCategories.includes(name)) {
+//       setSelectedCategories([...selectedCategories, name]);
+//     }
+//     setCategoryInput("");
+//     setShowCategorySuggestions(false);
+//   };
+
+//   useEffect(() => {
+//     const handleClickOutside = (e) => {
+//       if (categoryRef.current && !categoryRef.current.contains(e.target)) {
+//         setShowCategorySuggestions(false);
+//       }
+//     };
+//     document.addEventListener("mousedown", handleClickOutside);
+//     return () => document.removeEventListener("mousedown", handleClickOutside);
+//   }, []);
+
+//   // Handlers
+//   const handleFileChange = (e) => {
+//     const file = e.target.files[0];
+//     if (file) setSelectedFile(file);
+//   };
+
+//   const handleNumberChange = (e) => {
+//     const value = e.target.value;
+//     if (value === "") return setNumberOfQuestions("");
+//     const num = parseInt(value, 10);
+//     if (num >= 1) setNumberOfQuestions(num);
+//   };
+
+//   const validateLink = (value) => {
+//     setLink(value);
+//     const urlPattern =
+//       /^(https?:\/\/)?([\w-]+\.)+[\w]{2,}(\/[\w-._~:/?#[\]@!$&'()*+,;=]*)?$/i;
+//     setLinkError(value && !urlPattern.test(value) ? "Invalid URL" : "");
+//   };
+
+//   // Submit Form - Generate Quiz
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     if (inputMode === "link" && linkError)
+//       return toast.error("Fix the link first");
+
+//     setLoading(true);
+//     setError(null);
+//     try {
+//       const formData = new FormData();
+//       formData.append("language", language === "bangla" ? "bn" : "en");
+//       formData.append(
+//         "type",
+//         questionType === "multiple" ? "mcq" : questionType
+//       );
+//       formData.append("num_questions", numberOfQuestions);
+//       formData.append("prompt", prompt);
+//       if (inputMode === "text") formData.append("text", textInput);
+//       if (inputMode === "file" && selectedFile)
+//         formData.append("file", selectedFile);
+//       if (inputMode === "link" && link) formData.append("link", link);
+
+//       const res = await API.post("/qzz/president-ai-json-response/", formData, {
+//         headers: { "Content-Type": "multipart/form-data" },
+//       });
+
+//       setQuizResponse(res.data);
+//       setQuestions(res.data.quiz || []);
+//       setShowModal(true);
+//     } catch (err) {
+//       setError("Failed to generate quiz. Try again.");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // Save Quiz
+//   const handleQuizQuestionSave = async () => {
+//     if (selectedCategories.length === 0)
+//       return toast.error("Select at least one subject");
+
+//     const targetAnnId = annId || announcementId;
+//     if (!targetAnnId) return toast.error("Announcement ID missing");
+
+//     setIsSaving(true);
+//     try {
+//       const payload = {
+//         quiz_prompt: prompt,
+//         quiz_link: link || "",
+//         subjects: selectedCategories,
+//         marks_per_question: marksPerQuestion,
+//         negative_marks_per_question: negativeMarks,
+//         quiz: questions.map((q, index) => ({
+//           question_no: index + 1,
+//           question: q.question,
+//           options: q.options,
+//           answer: q.answer,
+//           explanation: q.explanation || "",
+//           type: "mcq",
+//         })),
+//       };
+
+//       const url = isRoundMode
+//         ? `/qzz/pre/anc/${targetAnnId}/round/${roundId}/save-quiz/`
+//         : `/qzz/pre/announcement/${targetAnnId}/save-quiz/`;
+
+//       await API.post(url, payload);
+//       toast.success("Quiz saved successfully!");
+//       setShowModal(false);
+//       navigate("/president/events");
+//     } catch (err) {
+//       const msg = err.response?.data?.error || "Failed to save quiz";
+//       toast.error(msg);
+//     } finally {
+//       setIsSaving(false);
+//     }
+//   };
+
+//   return (
+//     <div className="min-h-screen mt-10">
+//       <div className="max-w-5xl mx-auto px-4">
+//         {/* Header */}
+//         <div className="text-center mb-10">
+//           <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
+//             <span>Quiz Maker That's</span>
+//             <span className="text-primary">Delightfully Easy</span>
+//             <GiStarFormation className="text-yellow-500 text-6xl animate-spin-slow" />
+//           </h2>
+
+//           {/* Notice */}
+//           {showNotice && noticeData.length > 0 && (
+//             <div className="bg-orange-50 p-5 rounded-xl mb-6 border border-orange-200">
+//               <div className="flex justify-between items-start">
+//                 <div className="flex-1">
+//                   {loadingNoticeMessage ? (
+//                     <p>Loading notices...</p>
+//                   ) : (
+//                     noticeData.map((item) => (
+//                       <div key={item.id} className="text-left">
+//                         <p className="font-semibold flex items-center gap-2">
+//                           <TbExclamationCircle className="text-orange-600" />
+//                           Notice:
+//                         </p>
+//                         <p className="text-gray-800 mt-1">{item.notice_text}</p>
+//                         <p className="text-xs text-gray-500 mt-1">
+//                           {formatDateTime(item.updated_at)}
+//                         </p>
+//                       </div>
+//                     ))
+//                   )}
+//                 </div>
+//                 <button onClick={() => setShowNotice(false)}>
+//                   <RxCross2 size={20} />
+//                 </button>
+//               </div>
+//             </div>
+//           )}
+
+//           {/* Announcement Info */}
+//           <div className="bg-white rounded-xl shadow-md p-6 mb-8 text-left">
+//             <p className="bg-blue-50 text-primary px-4 py-3 rounded-full inline-flex items-center gap-2 text-sm font-medium">
+//               <FaExclamationCircle />
+//               YOU ARE MAKING QUESTIONS FOR:
+//               <span className="font-bold">
+//                 {details ? (
+//                   <Link
+//                     to={`/announcement-details/${
+//                       details.announcement || details.id
+//                     }`}
+//                     className="underline hover:text-secondary"
+//                     target="_blank"
+//                   >
+//                     {details.announcement_name || details.title}
+//                   </Link>
+//                 ) : (
+//                   "QUIZ COMPETITION"
+//                 )}
+//               </span>
+//             </p>
+//             {(details?.topic_subject || details?.subject) && (
+//               <p className="mt-3">
+//                 <strong>Subject:</strong>{" "}
+//                 {details.topic_subject || details.subject}
+//               </p>
+//             )}
+//           </div>
+//         </div>
+
+//         {/* Error / Loading */}
+//         {error && (
+//           <div className="bg-red-50 border border-red-300 text-red-700 p-4 rounded-lg mb-6 flex items-center gap-3">
+//             <FaExclamationCircle />
+//             {error}
+//           </div>
+//         )}
+//         {loading && (
+//           <div className="bg-blue-50 border border-blue-300 text-primary p-4 rounded-lg mb-6 flex items-center gap-3">
+//             <FaSpinner className="animate-spin" />
+//             Generating quiz...
+//           </div>
+//         )}
+
+//         {/* Input Mode Switcher */}
+//         <div className="bg-white rounded-xl shadow-md p-3 mb-8">
+//           <div className="grid grid-cols-3 gap-3">
+//             {["file", "text", "link"].map((mode) => (
+//               <button
+//                 key={mode}
+//                 onClick={() => setInputMode(mode)}
+//                 className={`py-4 px-6 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
+//                   inputMode === mode
+//                     ? "bg-gradient-to-r from-primary to-secondary text-white shadow-lg"
+//                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+//                 }`}
+//               >
+//                 {mode === "file" && <AiOutlineFile size={22} />}
+//                 {mode === "text" && <AiOutlineEdit size={22} />}
+//                 {mode === "link" && <AiOutlineLink size={22} />}
+//                 {mode.charAt(0).toUpperCase() + mode.slice(1)}
+//               </button>
+//             ))}
+//           </div>
+//         </div>
+
+//         {/* Main Form */}
+//         <form
+//           onSubmit={handleSubmit}
+//           className="bg-white rounded-xl shadow-md p-8"
+//         >
+//           {/* Quiz Options Grid */}
+//           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+//             {/* Number of Questions */}
+//             <div>
+//               <label className="block text-sm font-semibold text-gray-700 mb-2">
+//                 Number of Questions
+//               </label>
+//               <input
+//                 type="number"
+//                 value={numberOfQuestions}
+//                 onChange={handleNumberChange}
+//                 min="1"
+//                 className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+//               />
+//             </div>
+
+//             {/* Subject Multi-select */}
+//             <div className="lg:col-span-2">
+//               <label className="block text-sm font-semibold text-gray-700 mb-2">
+//                 Subject <span className="text-red-500">*</span>
+//               </label>
+//               <div className="relative" ref={categoryRef}>
+//                 <input
+//                   type="text"
+//                   value={categoryInput}
+//                   onChange={(e) => {
+//                     const val = e.target.value;
+//                     setCategoryInput(val);
+//                     const filtered = val
+//                       ? categories.filter((c) =>
+//                           c.category_name
+//                             .toLowerCase()
+//                             .includes(val.toLowerCase())
+//                         )
+//                       : categories;
+//                     setFilteredCategories(filtered);
+//                     setShowCategorySuggestions(true);
+//                   }}
+//                   onFocus={() => setShowCategorySuggestions(true)}
+//                   placeholder="Search subjects..."
+//                   className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+//                 />
+
+//                 {showCategorySuggestions && filteredCategories.length > 0 && (
+//                   <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-64 overflow-y-auto">
+//                     {filteredCategories.map((cat) => (
+//                       <li
+//                         key={cat.id}
+//                         onClick={() => handleCategorySelect(cat)}
+//                         className={`px-4 py-3 hover:bg-primary hover:text-white cursor-pointer flex items-center gap-2 ${
+//                           selectedCategories.includes(cat.category_name)
+//                             ? "bg-primary text-white"
+//                             : ""
+//                         }`}
+//                       >
+//                         <TbCategoryPlus />
+//                         {cat.category_name}
+//                       </li>
+//                     ))}
+//                   </ul>
+//                 )}
+
+//                 {selectedCategories.length > 0 && (
+//                   <div className="mt-3 flex flex-wrap gap-2">
+//                     {selectedCategories.map((cat) => (
+//                       <span
+//                         key={cat}
+//                         className="inline-flex items-center bg-gradient-to-r from-primary to-secondary text-white px-4 py-2 rounded-full text-sm font-medium"
+//                       >
+//                         {cat}
+//                         <button
+//                           type="button"
+//                           onClick={() =>
+//                             setSelectedCategories(
+//                               selectedCategories.filter((c) => c !== cat)
+//                             )
+//                           }
+//                           className="ml-2 hover:bg-white hover:bg-opacity-20 rounded-full w-6 h-6 flex items-center justify-center"
+//                         >
+//                           ×
+//                         </button>
+//                       </span>
+//                     ))}
+//                   </div>
+//                 )}
+//               </div>
+//             </div>
+
+//             {/* Marks */}
+//             <div>
+//               <label className="block text-sm font-semibold text-gray-700 mb-2">
+//                 Marks Per Question
+//               </label>
+//               <input
+//                 type="number"
+//                 step="0.5"
+//                 min="0"
+//                 value={marksPerQuestion}
+//                 onChange={(e) => setMarksPerQuestion(Number(e.target.value))}
+//                 className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+//               />
+//             </div>
+
+//             {/* Negative Marks */}
+//             <div>
+//               <label className="block text-sm font-semibold text-gray-700 mb-2">
+//                 Negative Marks (Optional)
+//               </label>
+//               <input
+//                 type="number"
+//                 step="0.25"
+//                 min="0"
+//                 placeholder="e.g. 0.25"
+//                 value={negativeMarks}
+//                 onChange={(e) => setNegativeMarks(Number(e.target.value))}
+//                 className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+//               />
+//             </div>
+
+//             {/* Other Selects */}
+//             <div>
+//               <label className="block text-sm font-semibold text-gray-700 mb-2">
+//                 Language
+//               </label>
+//               <select
+//                 value={language}
+//                 onChange={(e) => setLanguage(e.target.value)}
+//                 className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+//               >
+//                 <option value="english">English</option>
+//                 <option value="bangla">Bangla</option>
+//               </select>
+//             </div>
+
+//             <div>
+//               <label className="block text-sm font-semibold text-gray-700 mb-2">
+//                 Difficulty
+//               </label>
+//               <select
+//                 value={difficulty}
+//                 onChange={(e) => setDifficulty(e.target.value)}
+//                 className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+//               >
+//                 <option value="easy">Easy</option>
+//                 <option value="medium">Medium</option>
+//                 <option value="hard">Hard</option>
+//               </select>
+//             </div>
+
+//             <div>
+//               <label className="block text-sm font-semibold text-gray-700 mb-2">
+//                 Question Type
+//               </label>
+//               <select
+//                 value={questionType}
+//                 onChange={(e) => setQuestionType(e.target.value)}
+//                 className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+//               >
+//                 <option value="multiple">Multiple Choice</option>
+//               </select>
+//             </div>
+//           </div>
+
+//           {/* Input Area */}
+//           <div className="space-y-8">
+//             {/* Text / File / Link Inputs */}
+//             {inputMode === "text" && (
+//               <textarea
+//                 placeholder="Paste your text content here..."
+//                 value={textInput}
+//                 onChange={(e) => setTextInput(e.target.value)}
+//                 className="w-full h-64 p-5 border-2 rounded-xl focus:ring-2 focus:ring-primary outline-none"
+//               />
+//             )}
+
+//             {inputMode === "file" && (
+//               <div className="border-2 border-dashed border-gray-400 rounded-xl p-12 text-center hover:border-primary cursor-pointer">
+//                 <input
+//                   type="file"
+//                   id="file-upload"
+//                   className="hidden"
+//                   accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg"
+//                   onChange={handleFileChange}
+//                 />
+//                 <label htmlFor="file-upload" className="cursor-pointer">
+//                   <AiOutlineFile className="mx-auto text-6xl text-primary mb-4" />
+//                   <p className="text-lg font-medium">Click to upload file</p>
+//                   <p className="text-sm text-gray-500">PDF, DOC, TXT, Image</p>
+//                 </label>
+//                 {selectedFile && (
+//                   <div className="mt-4 bg-gray-100 p-3 rounded-lg inline-block">
+//                     <p className="font-medium">{selectedFile.name}</p>
+//                   </div>
+//                 )}
+//               </div>
+//             )}
+
+//             {inputMode === "link" && (
+//               <div>
+//                 <input
+//                   type="url"
+//                   placeholder="https://example.com/document"
+//                   value={link}
+//                   onChange={(e) => validateLink(e.target.value)}
+//                   className={`w-full px-5 py-4 border-2 rounded-xl focus:ring-2 focus:ring-primary outline-none ${
+//                     linkError ? "border-red-500" : "border-gray-300"
+//                   }`}
+//                 />
+//                 {linkError && (
+//                   <p className="text-red-500 text-sm mt-2">{linkError}</p>
+//                 )}
+//               </div>
+//             )}
+
+//             {/* Prompt */}
+//             <div>
+//               <label className="block text-sm font-semibold text-gray-700 mb-2">
+//                 Additional Prompt (Optional)
+//               </label>
+//               <textarea
+//                 placeholder="e.g. Focus on advanced topics, include diagrams explanation..."
+//                 value={prompt}
+//                 onChange={(e) => setPrompt(e.target.value)}
+//                 className="w-full h-32 p-5 border-2 rounded-xl focus:ring-2 focus:ring-primary outline-none"
+//               />
+//             </div>
+
+//             {/* Submit */}
+//             <div className="text-right">
+//               <button
+//                 type="submit"
+//                 disabled={loading}
+//                 className="bg-gradient-to-r from-primary to-secondary text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all flex items-center gap-3 mx-auto"
+//               >
+//                 {loading ? "Generating..." : "Generate Quiz"}
+//                 <GiStarFormation className="text-2xl" />
+//               </button>
+//             </div>
+//           </div>
+//         </form>
+
+//         {/* Save Modal */}
+//         {showModal && (
+//           <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+//             <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+//               <div className="bg-gradient-to-r from-primary to-secondary text-white p-8 rounded-t-2xl">
+//                 <div className="flex justify-between items-center">
+//                   <h3 className="text-3xl font-bold">Quiz Ready!</h3>
+//                   <button onClick={() => setShowModal(false)}>
+//                     <RxCross2 size={28} />
+//                   </button>
+//                 </div>
+//                 <p className="mt-2 text-lg opacity-90">
+//                   Review and save your AI-generated quiz
+//                 </p>
+//               </div>
+
+//               <div className="p-8 space-y-5">
+//                 <div className="grid grid-cols-2 gap-6 text-lg">
+//                   <div>
+//                     <strong>Questions:</strong> {numberOfQuestions}
+//                   </div>
+//                   <div>
+//                     <strong>Language:</strong> {language}
+//                   </div>
+//                   <div>
+//                     <strong>Subjects:</strong> {selectedCategories.join(", ")}
+//                   </div>
+//                   <div>
+//                     <strong>Marks/Q:</strong> {marksPerQuestion}
+//                   </div>
+//                   <div>
+//                     <strong>Negative:</strong> {negativeMarks || 0}
+//                   </div>
+//                   <div>
+//                     <strong>Type:</strong> MCQ
+//                   </div>
+//                 </div>
+
+//                 {prompt && (
+//                   <div>
+//                     <strong>Prompt:</strong>
+//                     <p className="bg-gray-100 p-4 rounded-lg mt-2">{prompt}</p>
+//                   </div>
+//                 )}
+//               </div>
+
+//               <div className="bg-gray-50 px-8 py-6 flex justify-end">
+//                 <button
+//                   onClick={handleQuizQuestionSave}
+//                   disabled={isSaving}
+//                   className="bg-gradient-to-r from-primary to-secondary text-white px-10 py-4 rounded-xl font-bold text-lg flex items-center gap-3 hover:shadow-xl transition-shadow disabled:opacity-70"
+//                 >
+//                   {isSaving ? (
+//                     <>
+//                       <FaSpinner className="animate-spin" /> Saving...
+//                     </>
+//                   ) : (
+//                     "Save Quiz"
+//                   )}
+//                 </button>
+//               </div>
+//             </div>
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default AiQuestionMaker;
 
 // import { useEffect, useState } from "react";
 // import { AiOutlineEdit, AiOutlineFile, AiOutlineLink } from "react-icons/ai";
