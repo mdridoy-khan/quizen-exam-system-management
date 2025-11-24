@@ -125,13 +125,13 @@ const Header = () => {
         </div>
 
         {/* Desktop Header (visible 2xl and above) */}
-        <nav className="hidden lg:flex items-center justify-between py-2">
+        <nav className="hidden lg:flex items-center justify-between py-1">
           <div>
             <Link to="/" className="inline-block">
               <img
                 src={Logo}
                 alt="Site Logo"
-                className="w-28 lg:w-32 xl:w-[160px] transition-all duration-300"
+                className="w-28 lg:w-32 xl:w-[140px] transition-all duration-300"
               />
             </Link>
           </div>
@@ -376,7 +376,7 @@ const Header = () => {
                 <ul className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
                   <li>
                     <Link
-                      to={`/${userType}/dashboard`}
+                      to={`/${userType}/events`}
                       className="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-gradientEnd"
                       onClick={() => setSidebarOpen(false)}
                     >

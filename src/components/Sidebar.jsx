@@ -6,32 +6,32 @@ import { IoMdClose } from "react-icons/io";
 import { MdLogout, MdNewspaper } from "react-icons/md";
 import { TbRosetteDiscountCheck } from "react-icons/tb";
 import { Link, NavLink } from "react-router-dom";
-import Logo from "../assets/logo/logo-blue.svg";
+import Logo from "../assets/logo/logo-blue.png";
 
 const Sidebar = ({ role, isSidebarOpen, toggleSidebar, handleLogout }) => {
   // menu configuration based on role
   const menuItems = {
     student: [
-      {
-        to: "/student/dashboard",
-        icon: <GoHome size={18} />,
-        label: "Dashboard",
-      },
+      // {
+      //   to: "/student/dashboard",
+      //   icon: <GoHome size={18} />,
+      //   label: "Dashboard",
+      // },
       {
         to: "/student/events",
         icon: <GoHome size={18} />,
         label: "Events",
       },
-      {
-        to: "/student/all-announcement",
-        icon: <GrAnnounce size={18} />,
-        label: "All Announcement",
-      },
-      {
-        to: "/student/my-announcement",
-        icon: <GrAnnounce size={18} />,
-        label: "Registered Announcement",
-      },
+      // {
+      //   to: "/student/all-announcement",
+      //   icon: <GrAnnounce size={18} />,
+      //   label: "All Announcement",
+      // },
+      // {
+      //   to: "/student/my-announcement",
+      //   icon: <GrAnnounce size={18} />,
+      //   label: "Registered Announcement",
+      // },
       {
         to: "/student/participation-list",
         icon: <TbRosetteDiscountCheck size={18} />,
@@ -61,11 +61,11 @@ const Sidebar = ({ role, isSidebarOpen, toggleSidebar, handleLogout }) => {
       },
     ],
     president: [
-      {
-        to: "/president/dashboard",
-        icon: <FiEdit size={18} />,
-        label: "Dashboard",
-      },
+      // {
+      //   to: "/president/dashboard",
+      //   icon: <FiEdit size={18} />,
+      //   label: "Dashboard",
+      // },
       {
         to: "/president/events",
         icon: <FiEdit size={18} />,
@@ -90,7 +90,7 @@ const Sidebar = ({ role, isSidebarOpen, toggleSidebar, handleLogout }) => {
             <img
               src={Logo}
               alt="Site Logo"
-              className="w-28 lg:w-32 transition-all duration-300"
+              className="w-28 transition-all duration-300 relative -top-3"
             />
           </Link>
         </div>
@@ -154,6 +154,163 @@ const Sidebar = ({ role, isSidebarOpen, toggleSidebar, handleLogout }) => {
 };
 
 export default Sidebar;
+
+// import { CgProfile } from "react-icons/cg";
+// import { FiEdit } from "react-icons/fi";
+// import { GoHome } from "react-icons/go";
+// import { GrAnnounce } from "react-icons/gr";
+// import { IoMdClose } from "react-icons/io";
+// import { MdLogout, MdNewspaper } from "react-icons/md";
+// import { TbRosetteDiscountCheck } from "react-icons/tb";
+// import { Link, NavLink } from "react-router-dom";
+// import Logo from "../assets/logo/logo-blue.svg";
+
+// const Sidebar = ({ role, isSidebarOpen, toggleSidebar, handleLogout }) => {
+//   // menu configuration based on role
+//   const menuItems = {
+//     student: [
+//       {
+//         to: "/student/dashboard",
+//         icon: <GoHome size={18} />,
+//         label: "Dashboard",
+//       },
+//       {
+//         to: "/student/events",
+//         icon: <GoHome size={18} />,
+//         label: "Events",
+//       },
+//       {
+//         to: "/student/all-announcement",
+//         icon: <GrAnnounce size={18} />,
+//         label: "All Announcement",
+//       },
+//       {
+//         to: "/student/my-announcement",
+//         icon: <GrAnnounce size={18} />,
+//         label: "Registered Announcement",
+//       },
+//       {
+//         to: "/student/participation-list",
+//         icon: <TbRosetteDiscountCheck size={18} />,
+//         label: "Your Participation",
+//       },
+//       {
+//         to: "/student/profile",
+//         icon: <CgProfile size={18} />,
+//         label: "My Profile",
+//       },
+//     ],
+//     tutor: [
+//       {
+//         to: "/tutor/dashboard",
+//         icon: <MdNewspaper size={18} />,
+//         label: "Dashboard",
+//       },
+//       {
+//         to: "/tutor/share-questions",
+//         icon: <GrAnnounce size={18} />,
+//         label: "Shared Question",
+//       },
+//       {
+//         to: "/tutor/profile",
+//         icon: <CgProfile size={18} />,
+//         label: "Your Profile",
+//       },
+//     ],
+//     president: [
+//       {
+//         to: "/president/dashboard",
+//         icon: <FiEdit size={18} />,
+//         label: "Dashboard",
+//       },
+//       {
+//         to: "/president/events",
+//         icon: <FiEdit size={18} />,
+//         label: "Events",
+//       },
+//       {
+//         to: "/president/profile",
+//         icon: <GoHome size={18} />,
+//         label: "Profile",
+//       },
+//     ],
+//   };
+
+//   const items = menuItems[role] || [];
+
+//   return (
+//     <div className="flex flex-col h-full bg-[#fcfcfc] text-[#22222a] font-sans">
+//       {/* Logo Section */}
+//       <div className="">
+//         <div className="font-bold text-lg h-16 2xl:h-20 p-4 border-b border-[#e4e4e7]">
+//           <Link to="/" className="inline-block">
+//             <img
+//               src={Logo}
+//               alt="Site Logo"
+//               className="w-28 lg:w-32 transition-all duration-300"
+//             />
+//           </Link>
+//         </div>
+//       </div>
+
+//       {/* Mobile Close Button */}
+//       <div className="flex justify-end mb-2 lg:hidden p-4">
+//         <button
+//           onClick={toggleSidebar}
+//           className="text-[#22222a] text-2xl hover:text-gradientStart"
+//         >
+//           <IoMdClose />
+//         </button>
+//       </div>
+
+//       {/* Menu List */}
+//       <nav className="flex-1 mt-6 flex flex-col gap-1 p-4">
+//         {items.map((item, index) => (
+//           <NavLink
+//             key={index}
+//             to={item.to}
+//             className={({ isActive }) =>
+//               `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+//                 isActive
+//                   ? "bg-primary text-white"
+//                   : "text-[#71717a] hover:bg-[#f0f0fa] hover:text-[#22222a]"
+//               }`
+//             }
+//           >
+//             {({ isActive }) => (
+//               <>
+//                 <span
+//                   className={`text-lg ${
+//                     isActive ? "text-white" : "text-primary"
+//                   }`}
+//                 >
+//                   {item.icon}
+//                 </span>
+//                 <span>{item.label}</span>
+//               </>
+//             )}
+//           </NavLink>
+//         ))}
+//       </nav>
+
+//       {/* Logout Button */}
+//       <div className="mt-auto p-4">
+//         <button
+//           onClick={handleLogout}
+//           className="group flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-[#71717a] hover:bg-[#f0f0fa] hover:text-[#22222a] transition-colors w-full text-left"
+//         >
+//           <MdLogout
+//             size={18}
+//             className="text-gradientStart group-hover:text-[#22222a] transition-colors"
+//           />
+//           <span>Logout</span>
+//         </button>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default Sidebar;
 
 // import { CgProfile } from "react-icons/cg";
 // import { FiEdit } from "react-icons/fi";

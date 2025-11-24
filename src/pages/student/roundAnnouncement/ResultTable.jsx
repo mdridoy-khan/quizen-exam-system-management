@@ -28,7 +28,7 @@ const ResultTable = ({ roundId, next_round_qualifier }) => {
         setError("");
         const offset = (currentPage - 1) * limit;
         const response = await API.get(
-          `/qzz/round-participant-list/${roundId}/?limit=${limit}&offset=${offset}`
+          `/qzz/view-own-event-participation-list/${roundId}/?limit=${limit}&offset=${offset}`
         );
         setQuizQuestionList(response.data.results || []);
         setCount(response.data.count || 0);

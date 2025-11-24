@@ -71,7 +71,10 @@ function App() {
       <Route path="/winner-announcement" element={<WinnerAnnouncement />} />
       <Route path="/winners-details" element={<WinnerAnnouncementDetails />} />
       <Route path="/closed-quiz" element={<ClosedQuiz />} />
-      <Route path="/quiz-details/:quizId" element={<QuizDetails />}></Route>
+      <Route
+        path="/announcement-details/:quizId"
+        element={<QuizDetails />}
+      ></Route>
       <Route path="/common-layout" element={<CommonLayout />}></Route>
 
       {/* President Pages with PresidentLayout */}

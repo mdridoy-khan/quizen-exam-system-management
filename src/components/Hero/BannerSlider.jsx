@@ -7,6 +7,9 @@ import "swiper/css/effect-fade";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import API from "../../api/API";
+import child1 from "../../assets/hero/1.jpg";
+import child2 from "../../assets/hero/2.jpg";
+import child3 from "../../assets/hero/3.jpg";
 import E from "../../assets/hero/E.svg";
 import I from "../../assets/hero/I.svg";
 import N from "../../assets/hero/N.svg";
@@ -203,6 +206,30 @@ const BannerSlider = ({ onScroll }) => {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="max-h-60 md:max-h-80">
+              <img
+                src={child1}
+                alt="child image"
+                className="rounded-lg h-full"
+              />
+            </div>
+            <div className="max-h-60 md:max-h-80">
+              <img
+                src={child2}
+                alt="child image"
+                className="rounded-lg h-full"
+              />
+            </div>
+            <div className="max-h-60 md:max-h-80">
+              <img
+                src={child3}
+                alt="child image"
+                className="rounded-lg h-full"
+              />
+            </div>
+          </div>
+
           {/* Stats Boxes */}
           {/* Uncomment and use if needed */}
           {/*
@@ -238,7 +265,7 @@ const BannerSlider = ({ onScroll }) => {
         </div>
         {/* Button */}
 
-        <div className="flex items-center justify-center mt-14">
+        <div className="flex items-center justify-center my-10">
           <Link
             to="/register"
             className="bg-gradient-to-r from-gradientStart to-gradientEnd text-white text-sm font-medium px-5 sm:px-6 py-2 sm:py-2 rounded-md transition duration-300 shadow-lg"
